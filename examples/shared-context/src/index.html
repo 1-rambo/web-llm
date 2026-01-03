@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>WebLLM Shared Context Demo</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 900px;
+        margin: 50px auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+      }
+      .section {
+        background: white;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .section h2 {
+        margin-top: 0;
+        color: #555;
+      }
+      textarea {
+        width: 100%;
+        min-height: 100px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 14px;
+      }
+      button {
+        background: #4CAF50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 5px;
+      }
+      button:hover {
+        background: #45a049;
+      }
+      button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+      #status {
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+      }
+      #status.loading {
+        background: #fff3cd;
+        color: #856404;
+      }
+      #status.success {
+        background: #d4edda;
+        color: #155724;
+      }
+      #status.error {
+        background: #f8d7da;
+        color: #721c24;
+      }
+      .output {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 4px;
+        margin-top: 10px;
+        white-space: pre-wrap;
+        font-family: monospace;
+        font-size: 14px;
+        min-height: 50px;
+      }
+      .example {
+        background: #e8f5e9;
+        padding: 10px;
+        border-left: 3px solid #4CAF50;
+        margin: 10px 0;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🚀 WebLLM Shared Context Demo</h1>
+
+    <div id="status" class="loading">
+      Initializing WebLLM Engine...
+    </div>
+
+    <div class="section">
+      <h2>📝 Step 1: Save Shared Context</h2>
+      <div class="example">
+        <strong>示例:</strong> 输入一段共享背景信息，例如："你是一个AI助手,擅长数学和编程。"
+      </div>
+      <textarea id="sharedContext" placeholder="输入共享上下文...">你是一个专业的AI助手,精通数学、编程和科学知识。</textarea>
+      <div>
+        <label>Context ID: </label>
+        <input type="text" id="contextId" value="ctx-1" style="padding: 5px; width: 200px;" />
+      </div>
+      <button id="saveBtn" disabled>Save Shared Context</button>
+      <div class="output" id="saveOutput">等待保存...</div>
+    </div>
+
+    <div class="section">
+      <h2>💬 Step 2: Run Multiple Tasks</h2>
+      <div class="example">
+        <strong>场景说明:</strong> 模拟多个任务共享同一个 system prompt 的情况
+      </div>
+      
+      <h3>Task 1:</h3>
+      <textarea id="task1" placeholder="输入任务1...">什么是质数?请举三个例子。</textarea>
+      
+      <h3>Task 2:</h3>
+      <textarea id="task2" placeholder="输入任务2...">写一个Python的快速排序函数。</textarea>
+      
+      <button id="runWithCache" disabled>🚀 Run Both Tasks WITH Cache</button>
+      <button id="runWithoutCache" disabled>🐌 Run Both Tasks WITHOUT Cache</button>
+      <div class="output" id="taskOutput">等待输入...</div>
+    </div>
+
+    <div class="section">
+      <h2>📊 Performance Comparison</h2>
+      <div class="output" id="perfOutput">运行任务后将显示性能对比数据...</div>
+    </div>
+
+    <script type="module" src="./shared_context.ts"></script>
+  </body>
+</html>

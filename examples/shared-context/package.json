@@ -1,0 +1,31 @@
+{
+  "name": "shared-context",
+  "version": "0.1.0",
+  "private": true,
+  "alias": {
+    "ws": false,
+    "perf_hooks": false,
+    "fs": false,
+    "path": false,
+    "crypto": false,
+    "url": false,
+    "module": false
+  },
+  "scripts": {
+    "clean": "powershell -Command \"Remove-Item -Recurse -Force .parcel-cache, dist -ErrorAction SilentlyContinue\"",
+    "start": "npm run clean && parcel src/index.html --port 8000",
+    "build": "npm run clean && parcel build src/index.html --dist-dir dist"
+  },
+  "devDependencies": {
+    "@parcel/transformer-typescript-tsc": "^2.16.3",
+    "buffer": "^5.7.1",
+    "parcel": "^2.8.3",
+    "process": "^0.11.10",
+    "tslib": "^2.3.1",
+    "typescript": "^4.9.5",
+    "url": "^0.11.3"
+  },
+  "dependencies": {
+    "@mlc-ai/web-llm": "file:../.."
+  }
+}

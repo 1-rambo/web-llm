@@ -8,13 +8,18 @@ function setLabel(id: string, text: string) {
   label.innerText = text;
 }
 
-async function main() {
+let engine: webllm.MLCEngineInterface;
+// 存储对话历史
+let conversationHistory: webllm.ChatCompletionMessageParam[] = [];
+
+async function initializeEngine() {
   const initProgressCallback = (report: webllm.InitProgressReport) => {
     setLabel("init-label", report.text);
   };
+  
   // Option 1: If we do not specify appConfig, we use `prebuiltAppConfig` defined in `config.ts`
-  const selectedModel = "Llama-3.1-8B-Instruct-q4f32_1-MLC";
-  const engine: webllm.MLCEngineInterface = await webllm.CreateMLCEngine(
+  const selectedModel = "Llama-3.2-1B-Instruct-q4f32_1-MLC";
+  engine = await webllm.CreateMLCEngine(
     selectedModel,
     {
       initProgressCallback: initProgressCallback,
@@ -56,27 +61,108 @@ async function main() {
   // });
   // await engine.reload(selectedModel);
 
-  const reply0 = await engine.chat.completions.create({
-    messages: [{ role: "user", content: "List three US states." }],
-    // below configurations are all optional
-    n: 3,
-    temperature: 1.5,
-    max_tokens: 256,
-    // 46510 and 7188 are "California", and 8421 and 51325 are "Texas" in Llama-3.1-8B-Instruct
-    // So we would have a higher chance of seeing the latter two, but never the first in the answer
-    logit_bias: {
-      "46510": -100,
-      "7188": -100,
-      "8421": 5,
-      "51325": 5,
-    },
-    logprobs: true,
-    top_logprobs: 2,
-  });
-  console.log(reply0);
-  console.log(reply0.usage);
+  console.log("=== Model Loaded ===");
+  setLabel("init-label", "Model ready");
 
-  // To change model, either create a new engine via `CreateMLCEngine()`, or call `engine.reload(modelId)`
+  // Enable generate button
+  const generateBtn = document.getElementById("generate-btn") as HTMLButtonElement;
+  if (generateBtn) {
+    generateBtn.disabled = false;
+  }
+}
+
+async function generateResponse() {
+  const promptInput = document.getElementById("prompt-input") as HTMLTextAreaElement;
+  const generateBtn = document.getElementById("generate-btn") as HTMLButtonElement;
+  
+  if (!promptInput || !generateBtn) {
+    return;
+  }
+
+  const promptText = promptInput.value.trim();
+  if (!promptText) {
+    alert("Please input a prompt");
+    return;
+  }
+
+  // 禁用按钮，防止重复点击
+  generateBtn.disabled = true;
+  setLabel("init-label", "Generating...");
+  setLabel("generate-label", "Generating...");
+  setLabel("stats-label", "");
+
+  console.log("Prompt:", promptText);
+
+  try {
+    // 添加用户消息到历史
+    conversationHistory.push({ role: "user", content: promptText });
+
+    const reply = await engine.chat.completions.create({
+      messages: conversationHistory, // 使用完整对话历史
+      temperature: 1.0,
+      max_tokens: 256,
+    });
+    
+    const assistantMessage = reply.choices[0].message.content || "";
+    
+    // 添加助手回复到历史
+    conversationHistory.push({ role: "assistant", content: assistantMessage });
+    
+    console.log("Reply:", assistantMessage);
+    console.log("=== Token's Statistics ===");
+    console.log(reply.usage);
+    
+    // 显示完整对话历史
+    let fullConversation = "";
+    conversationHistory.forEach((msg, index) => {
+      const roleLabel = msg.role === "user" ? "user" : "assistant";
+      fullConversation += `${roleLabel}:\n${msg.content}\n\n`;
+    });
+    
+    setLabel("generate-label", fullConversation);
+    
+    // 显示统计信息
+    const statsText = `Conversation rounds: ${Math.floor(conversationHistory.length / 2)} | Prompt tokens: ${reply.usage?.prompt_tokens || 0} | Completion tokens: ${reply.usage?.completion_tokens || 0} | Total tokens: ${reply.usage?.total_tokens || 0}`;
+    setLabel("stats-label", statsText);
+    setLabel("init-label", "Model ready");
+    
+    // 清空输入框，准备下一轮
+    promptInput.value = "";
+    
+  } catch (error) {
+    console.error("=== Error ===");
+    console.error(error);
+    setLabel("init-label", "Generation error: " + error.message);
+    setLabel("generate-label", "Generation failed");
+  } finally {
+    // 重新启用按钮
+    generateBtn.disabled = false;
+  }
+}
+
+// 重置对话历史
+function resetConversation() {
+  conversationHistory = [];
+  setLabel("generate-label", "对话已重置");
+  setLabel("stats-label", "");
+  console.log("=== 对话历史已清空 ===");
+}
+
+async function main() {
+  // 初始化模型
+  await initializeEngine();
+  
+  // 绑定生成按钮事件
+  const generateBtn = document.getElementById("generate-btn");
+  if (generateBtn) {
+    generateBtn.onclick = generateResponse;
+  }
+  
+  // 添加重置按钮（如果 HTML 中有的话）
+  const resetBtn = document.getElementById("reset-btn");
+  if (resetBtn) {
+    resetBtn.onclick = resetConversation;
+  }
 }
 
 main();
