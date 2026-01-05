@@ -6,6 +6,7 @@ import {
   ChatCompletionRequestNonStreaming,
   ChatCompletion,
   ChatCompletionChunk,
+  ChatCompletionMessageParam,
   CompletionCreateParams,
   Completion,
   CompletionCreateParamsBase,
@@ -233,6 +234,22 @@ export interface MLCEngineInterface {
     isPrefill: boolean,
     modelId?: string,
   ): Promise<number>;
+
+  /**
+   * Save a shared context for reuse across multiple requests.
+   * This is useful when multiple requests share the same system prompt or prefix.
+   *
+   * @param contextId A unique identifier for this shared context
+   * @param messages The message array to use as shared context (typically includes system prompt)
+   * @param modelId The model to use for processing this context (optional, uses current model if not specified)
+   * @returns A promise that resolves when the context is saved
+   * @note This is an async function
+   */
+  saveSharedContext(
+    contextId: string,
+    messages: ChatCompletionMessageParam[],
+    modelId?: string,
+  ): Promise<void>;
 
   /**
    * Set MLCEngine logging output level

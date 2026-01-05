@@ -281,6 +281,12 @@ export interface ChatCompletionRequestBase {
      * stages of token sampling.
      */
     enable_latency_breakdown?: boolean | null;
+
+    /**
+     * Optional shared context ID. If provided, the engine will try to reuse KV cache
+     * from a previously saved shared context instead of recomputing from scratch.
+     */
+    shared_context_id?: string | null;
   };
 }
 

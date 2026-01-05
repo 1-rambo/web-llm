@@ -13,6 +13,7 @@ import {
   ChatCompletionRequestNonStreaming,
   ChatCompletion,
   ChatCompletionChunk,
+  ChatCompletionMessageParam,
   Completion,
   CompletionCreateParamsNonStreaming,
   CompletionCreateParamsStreaming,
@@ -33,6 +34,7 @@ import {
   WorkerRequest,
   CompletionNonStreamingParams,
   EmbeddingParams,
+  SaveSharedContextParams,
   CompletionStreamInitParams,
   GetMessageParams,
   RuntimeStatsTextParams,
@@ -259,6 +261,17 @@ export class WebWorkerMLCEngineHandler {
           const res = await this.engine.embedding(params.request);
           onComplete?.(res);
           return res;
+        });
+        return;
+      }
+      // For engine.saveSharedContext()
+      case "saveSharedContext": {
+        this.handleTask(msg.uuid, async () => {
+          const params = msg.content as SaveSharedContextParams;
+          await this.reloadIfUnmatched(params.currentModelIds, params.chatOpts);
+          await this.engine.saveSharedContext(params.contextId, params.messages, params.modelId);
+          onComplete?.(undefined);
+          return undefined;
         });
         return;
       }
@@ -799,6 +812,28 @@ export class WebWorkerMLCEngine implements MLCEngineInterface {
       },
     };
     return await this.getPromise<CreateEmbeddingResponse>(msg);
+  }
+
+  async saveSharedContext(
+    contextId: string,
+    messages: ChatCompletionMessageParam[],
+    modelId?: string,
+  ): Promise<void> {
+    if (this.modelId === undefined) {
+      throw new WorkerEngineModelNotLoadedError(this.constructor.name);
+    }
+    const msg: WorkerRequest = {
+      kind: "saveSharedContext",
+      uuid: crypto.randomUUID(),
+      content: {
+        contextId: contextId,
+        messages: messages,
+        modelId: modelId,
+        currentModelIds: this.modelId,
+        chatOpts: this.chatOpts,
+      },
+    };
+    return await this.getPromise<void>(msg);
   }
 
   onmessage(event: any) {

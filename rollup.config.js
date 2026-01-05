@@ -11,10 +11,13 @@ export default {
             exports: 'named',
             format: 'es',
             sourcemap: true,
-            globals: {'ws': 'ws',
-                      'perf_hooks': 'perf_hooks'}
+            globals: {
+                'ws': 'ws',
+                'perf_hooks': 'perf_hooks'
+            }
         }
     ],
+    external: ['ws', 'perf_hooks'],  // Declare these as external modules
     plugins: [
         ignore(["fs", "path", "crypto"]),
         nodeResolve({ browser: true }),

@@ -5,6 +5,7 @@ import {
   ChatCompletionRequestNonStreaming,
   ChatCompletion,
   ChatCompletionChunk,
+  ChatCompletionMessageParam,
   CompletionCreateParamsNonStreaming,
   CompletionCreateParamsStreaming,
   Completion,
@@ -27,6 +28,7 @@ type RequestKind =
   | "chatCompletionNonStreaming"
   | "completionNonStreaming"
   | "embedding"
+  | "saveSharedContext"
   | "getMessage"
   | "chatCompletionStreamInit"
   | "completionStreamInit"
@@ -97,6 +99,13 @@ export interface EmbeddingParams {
   modelId: string[];
   chatOpts?: ChatOptions[];
 }
+export interface SaveSharedContextParams {
+  contextId: string;
+  messages: ChatCompletionMessageParam[];
+  modelId?: string;
+  currentModelIds: string[];
+  chatOpts?: ChatOptions[];
+}
 export interface CompletionStreamNextChunkParams {
   selectedModelId: string;
 }
@@ -116,6 +125,7 @@ export type MessageContent =
   | CompletionNonStreamingParams
   | CompletionStreamInitParams
   | EmbeddingParams
+  | SaveSharedContextParams
   | CompletionStreamNextChunkParams
   | CustomRequestParams
   | InitProgressReport

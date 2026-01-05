@@ -147,6 +147,14 @@ export class LLMChatPipeline {
   private sampleIndicesDevice: tvmjs.Tensor;
   private topPDevice: tvmjs.Tensor;
 
+  // Shared context KV Cache snapshots stored in GPU memory
+  // Each snapshot has its own independent KV cache instance
+  private kvCacheSnapshots = new Map<string, {
+    kvCache: tvmjs.TVMObject;  // Independent KV cache for this shared context
+    filledLength: number;
+    conversation: Conversation;
+  }>();
+
   constructor(
     tvm: tvmjs.Instance,
     tokenizer: Tokenizer,
@@ -406,6 +414,96 @@ export class LLMChatPipeline {
         new tvmjs.Scalar(this.attentionSinkSize, "int32"),
       );
     }
+  }
+
+  saveKVCacheSnapshot(contextId: string): void {
+    // Deep clone the conversation state
+    const clonedConversation = Object.assign(
+      Object.create(Object.getPrototypeOf(this.conversation)),
+      this.conversation
+    );
+    clonedConversation.messages = [...this.conversation.messages];
+    
+    // DEBUG: Output KV cache details BEFORE saving
+    log.info(`[DEBUG] Saving KV cache snapshot "${contextId}":`);
+    log.info(`  - filledKVCacheLength: ${this.filledKVCacheLength}`);
+    
+    // CRITICAL: Save the CURRENT kvCache to snapshot (transfer ownership)
+    // The current kvCache contains all the prefilled data we want to preserve
+    this.kvCacheSnapshots.set(contextId, {
+      kvCache: this.kvCache,  // Transfer the current KV cache to the snapshot
+      filledLength: this.filledKVCacheLength,
+      conversation: clonedConversation,
+    });
+    
+    // DEBUG: Verify what was saved
+    const savedSnapshot = this.kvCacheSnapshots.get(contextId)!;
+    log.info(`[DEBUG] Snapshot saved successfully:`);
+    log.info(`  - Saved filledLength: ${savedSnapshot.filledLength}`);
+    log.info(`  - Saved kvCache exists: ${savedSnapshot.kvCache !== undefined}`);
+    log.info(`  - Saved conversation messages: ${savedSnapshot.conversation.messages.length}`);
+    
+    // Create a NEW kvCache for future operations
+    this.tvm.beginScope();
+    const fcreateCache = this.vm.getFunction("create_tir_paged_kv_cache");
+    const defaultPageSize = 16;
+    const defaultMaxNumSequence = 1;
+    const maxTotalSeqLen =
+      this.slidingWindowSize != -1
+        ? this.slidingWindowSize
+        : this.contextWindowSize;
+    
+    this.kvCache = this.tvm.detachFromCurrentScope(
+      fcreateCache(
+        this.tvm.makeShapeTuple([defaultMaxNumSequence]),
+        this.tvm.makeShapeTuple([maxTotalSeqLen]),
+        this.tvm.makeShapeTuple([this.prefillChunkSize]),
+        this.tvm.makeShapeTuple([defaultPageSize]),
+        this.tvm.makeShapeTuple([this.slidingWindowSize != -1 ? 1 : 0]),
+      ),
+    );
+    this.tvm.endScope();
+    
+    // Reset the new kvCache
+    this.resetKVCache();
+    this.filledKVCacheLength = 0;
+    
+    log.info(`[DEBUG] Created new kvCache for future use`);
+    log.info(`Saved KV cache snapshot "${contextId}" with ${savedSnapshot.filledLength} tokens`);
+  }
+
+  loadKVCacheSnapshot(contextId: string): boolean {
+    const snapshot = this.kvCacheSnapshots.get(contextId);
+    if (!snapshot) {
+      return false;
+    }
+    
+    // Save the CURRENT kvCache back (for potential cleanup)
+    const previousKVCache = this.kvCache;
+    const previousFilledLength = this.filledKVCacheLength;
+    
+    // Restore the snapshot's KV cache as the main cache
+    this.kvCache = snapshot.kvCache;
+    this.filledKVCacheLength = snapshot.filledLength;
+    
+    // Restore conversation state (deep clone to avoid mutation)
+    const clonedConversation = Object.assign(
+      Object.create(Object.getPrototypeOf(snapshot.conversation)),
+      snapshot.conversation
+    );
+    clonedConversation.messages = [...snapshot.conversation.messages];
+    this.conversation = clonedConversation;
+    
+    // We could dispose previousKVCache here if needed, but that would free memory
+    // For now, just let it be garbage collected
+    // TODO: Consider proper cleanup strategy
+    
+    log.info(`Loaded KV cache snapshot "${contextId}" with ${this.filledKVCacheLength} tokens`);
+    return true;
+  }
+
+  hasKVCacheSnapshot(contextId: string): boolean {
+    return this.kvCacheSnapshots.has(contextId);
   }
 
   /**

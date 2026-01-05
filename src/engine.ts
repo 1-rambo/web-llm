@@ -1323,6 +1323,78 @@ export class MLCEngine implements MLCEngineInterface {
     }
   }
 
+  async saveSharedContext(
+    contextId: string,
+    messages: Array<ChatCompletionMessageParam>,
+    modelId?: string,
+  ): Promise<void> {
+    const [, selectedPipeline, selectedChatConfig] = this.getLLMStates(
+      "saveSharedContext",
+      modelId,
+    );
+
+    // DEBUG: Log input messages
+    log.info(`[DEBUG] saveSharedContext called with contextId="${contextId}"`);
+    log.info(`[DEBUG] Input messages:`, JSON.stringify(messages, null, 2));
+
+    // Reset pipeline to start fresh
+    selectedPipeline.resetChat();
+    log.info(`[DEBUG] Chat reset completed`);
+
+    // Extract ONLY the system message (ignore user placeholders)
+    const systemMessages = messages.filter(m => m.role === "system");
+    if (systemMessages.length === 0) {
+      throw new Error("saveSharedContext requires at least one system message");
+    }
+
+    log.info(`[DEBUG] Found system message(s): ${JSON.stringify(systemMessages)}`);
+
+    // Create a conversation with ONLY the system message
+    // We'll use a minimal user message as a trigger for prefill
+    const tempRequest: ChatCompletionRequestNonStreaming = {
+      messages: [
+        ...systemMessages,
+        { role: "user", content: "Hi" },  // Minimal trigger message
+      ],
+      stream: false,
+    };
+    
+    const sharedConv = getConversationFromChatCompletionRequest(
+      tempRequest,
+      selectedChatConfig,
+      false,  // Don't include the trigger message in conversation
+    );
+    log.info(`[DEBUG] Created conversation, override_system_message length: ${sharedConv.override_system_message?.length || 0}`);
+    
+    selectedPipeline.setConversation(sharedConv);
+    log.info(`[DEBUG] Set conversation on pipeline`);
+
+    // Prefill with minimal trigger to compute system message KV cache
+    const genConfig: GenerationConfig = {
+      max_tokens: 1,
+    };
+
+    log.info(`[DEBUG] Calling prefillStep to compute system message KV cache...`);
+    const start_prefill = performance.now();
+    
+    // Pass minimal trigger - this will cause the system message to be prefilled
+    await selectedPipeline.prefillStep(
+      "Hi",
+      Role.user,
+      undefined,
+      genConfig,
+    );
+    
+    const prefill_time = ((performance.now() - start_prefill) / 1e3).toFixed(3);
+    log.info(`[DEBUG] prefillStep completed in ${prefill_time}s`);
+
+    // Now the KV cache contains all the prefilled context
+    // Save this state (transfers ownership of kvCache to snapshot)
+    log.info(`[DEBUG] Saving KV cache snapshot...`);
+    selectedPipeline.saveKVCacheSnapshot(contextId);
+    log.info(`Shared context "${contextId}" saved successfully with ${selectedPipeline.getCurRoundPrefillTotalTokens()} tokens.`);
+  }
+
   //-----------------------------------------------
   // 7. Prefill and decode given an LLMChatPipeline
   //-----------------------------------------------
@@ -1349,34 +1421,48 @@ export class MLCEngine implements MLCEngineInterface {
     chatConfig: ChatConfig,
     genConfig: GenerationConfig,
   ) {
-    // TODO: SPECIFY MODEL TO PERFORM PREFILL, HENCE RETRIEVE CONFIG
     if (chatConfig === undefined) {
       throw new ConfigurationNotInitializedError();
     }
+    
     let input_str: string;
     let input_role_str: string | undefined;
     let lastMsgRole = Role.user;
+    
     if ("messages" in input) {
-      // For ChatCompletionRequest, we prepare input using `messages`
-      // 1. Get new conversation based on request, determine if we are in multiround chatting
-      const oldConv = pipeline.getConversationObject();
-      const newConv = getConversationFromChatCompletionRequest(
-        input,
-        chatConfig,
-      );
-      if (!compareConversationObject(oldConv, newConv)) {
-        // Not the same conversation, so not multiround chatting, reset everything (KV cache, etc.)
-        pipeline.resetChat();
-        pipeline.setConversation(newConv);
-      } else if (newConv.messages.length === 0) {
-        // Empty oldConv, and no chat history in newConv, so reset and setConversation
-        pipeline.resetChat();
-        pipeline.setConversation(newConv);
+      const sharedContextId = input.extra_body?.shared_context_id;
+      if (sharedContextId && pipeline.hasKVCacheSnapshot(sharedContextId)) {
+        log.info(`Loading shared context "${sharedContextId}"`);
+        // 恢复 KVCache 和 conversation
+        pipeline.loadKVCacheSnapshot(sharedContextId);
+        // conversation 已恢复为 shared context
+        const last_msg = input.messages[input.messages.length - 1] as ChatCompletionMessageParam;
+        pipeline.getConversationObject().appendMessage(
+          last_msg.role === "tool" ? Role.tool : Role.user,
+          last_msg.content as string,
+          last_msg.role === "user" && last_msg.name ? last_msg.name : undefined
+        );
+        input_str = last_msg.content as string;
+        input_role_str = last_msg.role === "user" && last_msg.name ? last_msg.name : undefined;
+        lastMsgRole = last_msg.role === "tool" ? Role.tool : Role.user;
       } else {
-        log.info("Multiround chatting, reuse KVCache.");
+        const oldConv = pipeline.getConversationObject();
+        const newConv = getConversationFromChatCompletionRequest(
+          input,
+          chatConfig,
+        );
+        
+        if (!compareConversationObject(oldConv, newConv)) {
+          pipeline.resetChat();
+          pipeline.setConversation(newConv);
+        } else if (newConv.messages.length === 0) {
+          pipeline.resetChat();
+          pipeline.setConversation(newConv);
+        } else {
+          log.info("Multiround chatting, reuse KVCache.");
+        }
       }
 
-      // 2. Treat the last message as the usual input
       const last_msg = input.messages[
         input.messages.length - 1
       ] as ChatCompletionMessageParam;
@@ -1385,7 +1471,6 @@ export class MLCEngine implements MLCEngineInterface {
         last_msg.role === "user" && last_msg.name ? last_msg.name : undefined;
       lastMsgRole = last_msg.role === "tool" ? Role.tool : Role.user;
     } else {
-      // For CompletionCreateParams, the input is just the prompt
       input_str = input.prompt;
       pipeline.resetChat();
       const newConv = getConversation(
@@ -1395,6 +1480,7 @@ export class MLCEngine implements MLCEngineInterface {
       );
       pipeline.setConversation(newConv);
     }
+    
     return pipeline.prefillStep(
       input_str,
       lastMsgRole,

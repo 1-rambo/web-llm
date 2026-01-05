@@ -42,7 +42,7 @@ async function initEngine() {
     engine = await webllm.CreateMLCEngine(
       "Llama-3.2-1B-Instruct-q4f16_1-MLC",
       {
-        logLevel: "INFO", // Enable INFO level logging to see debug messages
+        logLevel: "INFO",
         initProgressCallback: (progress) => {
           setStatus(`Loading: ${progress.text} (${Math.round(progress.progress * 100)}%)`, "loading");
         },
@@ -146,7 +146,7 @@ runWithCache.onclick = async () => {
     withCacheTask1Time = (task1End - task1Start) / 1000;
     const task1Result = response1.choices[0].message.content || "";
     const task1Prefill = response1.usage?.extra?.time_to_first_token_s || 0;
-    withCacheTask1Tokens = response1.usage?.completion_tokens || 0;  // 记录输出 token 数
+    withCacheTask1Tokens = response1.usage?.completion_tokens || 0;
     
     taskOutputEl.textContent += `\n✅ Task 1 completed (${withCacheTask1Time.toFixed(3)}s, prefill: ${task1Prefill.toFixed(3)}s, tokens: ${withCacheTask1Tokens})`;
     
@@ -162,7 +162,7 @@ runWithCache.onclick = async () => {
     withCacheTask2Time = (task2End - task2Start) / 1000;
     const task2Result = response2.choices[0].message.content || "";
     const task2Prefill = response2.usage?.extra?.time_to_first_token_s || 0;
-    withCacheTask2Tokens = response2.usage?.completion_tokens || 0;  // 记录输出 token 数
+    withCacheTask2Tokens = response2.usage?.completion_tokens || 0;
     
     const totalEndTime = performance.now();
     withCacheTotalTime = (totalEndTime - totalStartTime) / 1000;
@@ -236,7 +236,7 @@ runWithoutCache.onclick = async () => {
     withoutCacheTask1Time = (task1End - task1Start) / 1000;
     const task1Result = response1.choices[0].message.content || "";
     const task1Prefill = response1.usage?.extra?.time_to_first_token_s || 0;
-    withoutCacheTask1Tokens = response1.usage?.completion_tokens || 0;  // 记录输出 token 数
+    withoutCacheTask1Tokens = response1.usage?.completion_tokens || 0;
     
     taskOutputEl.textContent += `\n✅ Task 1 completed (${withoutCacheTask1Time.toFixed(3)}s, prefill: ${task1Prefill.toFixed(3)}s, tokens: ${withoutCacheTask1Tokens})`;
     
@@ -254,7 +254,7 @@ runWithoutCache.onclick = async () => {
     withoutCacheTask2Time = (task2End - task2Start) / 1000;
     const task2Result = response2.choices[0].message.content || "";
     const task2Prefill = response2.usage?.extra?.time_to_first_token_s || 0;
-    withoutCacheTask2Tokens = response2.usage?.completion_tokens || 0;  // 记录输出 token 数
+    withoutCacheTask2Tokens = response2.usage?.completion_tokens || 0;
     
     const totalEndTime = performance.now();
     withoutCacheTotalTime = (totalEndTime - totalStartTime) / 1000;
