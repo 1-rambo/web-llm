@@ -1,0 +1,1322 @@
+[
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 800,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/sony-wh-ch710n-h-wireless-bluetooth-noise-cancelling-headphones.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/bulk-headphones-kids-headphones-5pack-ymj-headphones-for-kids-girls-boys-earbuds-for-kids-colorful-mixed-color-headphones-for-grils-boys-students-libraries-classroom.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/munskt-color-headphones-heavy-bass-earphone-in-ear-headphones-headphones-with-microphone-mobile-phone-earphone-wired-earphone-3-5mm-headphones-pink-4pack.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/sony-wh-ch710n-h-wireless-bluetooth-noise-cancelling-headphones.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, compare the prices of the headphones and tell me which one is the least expensive.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "MUNSKT Color Headphones Heavy bass Earphone in Ear Headphones Headphones with Microphone Mobile Phone Earphone Wired Earphone 3.5mm Headphones (Pink 4pack)",
+                    "7.99"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 801,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/sdolphin-womens-running-shoes.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/nike-men-s-running-shoes-size-7-75.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/nike-men-s-running-shoes-size-7-75.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, which of these running shoes falls under the budget of $50?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "SDolphin womens Running Shoes",
+                    "48.99"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 802,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/sdolphin-womens-running-shoes.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/nike-men-s-running-shoes-size-7-75.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/sdolphin-womens-running-shoes.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, calculate the total cost if I buy one of each item.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "must_include": [
+                    "104.03"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 803,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/ipason-gaming-desktop-amd-athlon-3000g-2-core-3-5ghz-radeon-vega-3-240gb-ssd-8gb-2666mhz-550w-80-plus-psu-windows-10-home-gaming-pc-amd-3000g-8g-240g-ssd.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/ipason-gamer-xtreme-vr-gaming-pc-core-i5-11400f-2-6ghz-16gb-ddr4-high-frequency-ram-rtx-2060-6gb-500gb-nvme-ssd-desktop-gaming-computers-i5-11400f-rtx-2060-16g-d4-ram-500g-ssd.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/ipason-gamer-xtreme-vr-gaming-pc-core-i5-11400f-2-6ghz-16gb-ddr4-high-frequency-ram-rtx-2060-6gb-500gb-nvme-ssd-desktop-gaming-computers-i5-11400f-rtx-2060-16g-d4-ram-500g-ssd.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, what is the price difference between the two products?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "must_include": [
+                    "669.01"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 804,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/ipason-gaming-desktop-amd-athlon-3000g-2-core-3-5ghz-radeon-vega-3-240gb-ssd-8gb-2666mhz-550w-80-plus-psu-windows-10-home-gaming-pc-amd-3000g-8g-240g-ssd.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/ipason-gamer-xtreme-vr-gaming-pc-core-i5-11400f-2-6ghz-16gb-ddr4-high-frequency-ram-rtx-2060-6gb-500gb-nvme-ssd-desktop-gaming-computers-i5-11400f-rtx-2060-16g-d4-ram-500g-ssd.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/ipason-gamer-xtreme-vr-gaming-pc-core-i5-11400f-2-6ghz-16gb-ddr4-high-frequency-ram-rtx-2060-6gb-500gb-nvme-ssd-desktop-gaming-computers-i5-11400f-rtx-2060-16g-d4-ram-500g-ssd.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, add the product with the lowest price to the shopping cart.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "program_html"
+            ],
+            "reference_answers": null,
+            "reference_url": "",
+            "program_html": [
+                {
+                    "url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/checkout/cart",
+                    "locator": "",
+                    "required_contents": {
+                        "must_include": [
+                            "IPASON Gaming Desktop AMD Athlon 3000G(2 Core 3.5GHz) Radeon Vega 3 240GB SSD 8GB 2666MHz 550W 80 Plus PSU Windows 10 Home Gaming PC (AMD 3000G 8G 240G SSD)"
+                        ]
+                    }
+                }
+            ],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 805,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/sdolphin-womens-running-shoes.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/nike-men-s-running-shoes-size-7-75.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/nike-men-s-running-shoes-size-7-75.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, which of these running shoes falls within a budget above 50 but under 129?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "Nike Men's Running Shoes, Size 7.75",
+                    "55.04"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 806,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/sigg-water-bottle-bumble-bee-1-0-3-liter-bottle-s.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/smallwoodi-dye-bottle-water-bottle-pro-salon-hair-washing-coloring-dye-bottle-applicator-comb-dispensing-brush-white.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/bring-the-groceries-in-one-trip-no-exceptions-insulated-water-bottle-20oz.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/bring-the-groceries-in-one-trip-no-exceptions-insulated-water-bottle-20oz.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, show me the water bottle with the highest price.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "Bring The Groceries In One Trip No Exceptions Insulated Water Bottle 20oz",
+                    "29.80"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 807,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/white-usb-mouse-wired-mice-for-laptop-desktop-computer-silent-external-air-corded-2-pack-compact-slim-compatible-mac-imac-and-pc.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-computer-mouse-2-4g-noiseless-mouse-with-usb-receiver-3-adjustable-dpi-levels-portable-computer-mice-compatible-with-pc-mac-laptop-chromebook-white.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-computer-mouse-2-4g-noiseless-mouse-with-usb-receiver-3-adjustable-dpi-levels-portable-computer-mice-compatible-with-pc-mac-laptop-chromebook-white.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, are these mice from the same manufacturer?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "no"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 808,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/morepro-fitness-tracker-heart-rate-monitor-blood-pressure-activity-tracker-with-blood-oxygen-spo2-ip68-wateproof-sleep-tracker-sport-bracelet-pedometer-step-calories-smartwatch-women.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/fitness-tracker-with-heart-rate-blood-pressure-blood-oxygen-sleep-temperature-monitor-activity-tracker-smart-watch-pedometer-for-kids-man-women.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-computer-mouse-2-4g-noiseless-mouse-with-usb-receiver-3-adjustable-dpi-levels-portable-computer-mice-compatible-with-pc-mac-laptop-chromebook-white.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-computer-mouse-2-4g-noiseless-mouse-with-usb-receiver-3-adjustable-dpi-levels-portable-computer-mice-compatible-with-pc-mac-laptop-chromebook-white.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, buy the fitness tracker that is cheapest.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "program_html"
+            ],
+            "reference_answers": null,
+            "reference_url": "",
+            "program_html": [
+                {
+                    "url": "func:shopping_get_latest_order_url()",
+                    "locator": "document.querySelector(\".order-details-items.ordered\").outerText",
+                    "required_contents": {
+                        "must_include": [
+                            "B087Q1WW12"
+                        ]
+                    }
+                }
+            ],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 809,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/morepro-fitness-tracker-heart-rate-monitor-blood-pressure-activity-tracker-with-blood-oxygen-spo2-ip68-wateproof-sleep-tracker-sport-bracelet-pedometer-step-calories-smartwatch-women.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/fitness-tracker-with-heart-rate-blood-pressure-blood-oxygen-sleep-temperature-monitor-activity-tracker-smart-watch-pedometer-for-kids-man-women.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-computer-mouse-2-4g-noiseless-mouse-with-usb-receiver-3-adjustable-dpi-levels-portable-computer-mice-compatible-with-pc-mac-laptop-chromebook-white.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/morepro-fitness-tracker-heart-rate-monitor-blood-pressure-activity-tracker-with-blood-oxygen-spo2-ip68-wateproof-sleep-tracker-sport-bracelet-pedometer-step-calories-smartwatch-women.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, what is the price range of the fitness tracker?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "must_include": [
+                    "26.96",
+                    "45.99"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 810,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/tcl-a30-unlocked-smartphone-with-5-5-hd-display-8mp-rear-camera-32gb-3gb-ram-3000mah-battery-android-11-prime-black.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/total-wireless-samsung-galaxy-a20-4g-lte-prepaid-smartphone-locked-black-32gb-sim-card-included-cdma.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/tcl-10l-unlocked-android-smartphone-with-6-53-fhd-lcd-display-48mp-quad-rear-camera-system-64gb-6gb-ram-4000mah-battery.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/tcl-10l-unlocked-android-smartphone-with-6-53-fhd-lcd-display-48mp-quad-rear-camera-system-64gb-6gb-ram-4000mah-battery.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, which smartphone has least long-lasting battery?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "TCL A30 Unlocked Smartphone",
+                    "B09B79YT3S"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 811,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/tcl-20s-unlocked-android-smartphone-with-6-67-dotch-fhd-display-64mp-quad-rear-camera-system-128gb-4gb-ram-5000mah-battery-with-fast-charging-milky-way-black.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/total-wireless-samsung-galaxy-a20-4g-lte-prepaid-smartphone-locked-black-32gb-sim-card-included-cdma.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/tcl-10l-unlocked-android-smartphone-with-6-53-fhd-lcd-display-48mp-quad-rear-camera-system-64gb-6gb-ram-4000mah-battery.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/tcl-10l-unlocked-android-smartphone-with-6-53-fhd-lcd-display-48mp-quad-rear-camera-system-64gb-6gb-ram-4000mah-battery.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, which of these smartphones has a better battery life?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "5000mAh",
+                    "TCL 20S Unlocked Android Smartphone with 6.67” Dotch FHD+ Display, 64MP Quad Rear Camera System, 128GB+4GB RAM, 5000mAh Battery with Fast Charging, Milky Way Black"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 812,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/simply-genius-12-pack-large-and-tall-17x17-pop-up-mesh-food-covers-tent-umbrella-for-outdoors-screen-tents-protectors-for-bugs-reusable-and-collapsible.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/jackpot-princess-low-loft-bed-with-slide-pink-and-white-tent-and-tower-twin-gray.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/jasper-twin-junior-loft-bed-dove-gray-frame-and-pink-white-bottom-playhouse-tent.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/simply-genius-12-pack-large-and-tall-17x17-pop-up-mesh-food-covers-tent-umbrella-for-outdoors-screen-tents-protectors-for-bugs-reusable-and-collapsible.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, show the tent with a minimum capacity of 4 persons.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": "N/A"
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 813,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/dreametech-t10-cordless-vacuum-cleaner-long-runtime-20kpa-powerful-suction-stick-vacuum-cleaner-8-layer-noise-reduction-handheld-vacuum-for-home-hard-floor-pet-hair.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/dyson-v11-torque-drive-cordless-vacuum-cleaner-blue-renewed.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/dreametech-t10-cordless-vacuum-cleaner-long-runtime-20kpa-powerful-suction-stick-vacuum-cleaner-8-layer-noise-reduction-handheld-vacuum-for-home-hard-floor-pet-hair.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, do both of these vacuums feature HEPA filtration?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "no"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 814,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/dcoc-1-light-wall-sconce-plug-in-modern-remote-control-wall-sconce-10w-800lm-wall-light-with-plug-in-cord-indoor-hardwire-dimmable-white-wall-sconce-lighting-for-bedside-bedroom-aisle-loft.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/zjztd-pull-chain-wall-lamp-e27-retro-bedroom-bedside-iron-and-glass-shade-wall-sconces-black-finish.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/olean-mid-century-modern-wall-light-sconce-black-antique-brass-hardwired-6-wide-fixture-frosted-glass-globe-shade-bedroom-bathroom-bedside-living-room-home-hallway-dining-possini-euro-design.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/olean-mid-century-modern-wall-light-sconce-black-antique-brass-hardwired-6-wide-fixture-frosted-glass-globe-shade-bedroom-bathroom-bedside-living-room-home-hallway-dining-possini-euro-design.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, list the different finish types of these lights.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "must_include": [
+                    "Painted",
+                    "Matte",
+                    "Brass - Antique Brass"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 815,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/dreametech-t10-cordless-vacuum-cleaner-long-runtime-20kpa-powerful-suction-stick-vacuum-cleaner-8-layer-noise-reduction-handheld-vacuum-for-home-hard-floor-pet-hair.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/dyson-v11-torque-drive-cordless-vacuum-cleaner-blue-renewed.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/dreametech-t10-cordless-vacuum-cleaner-long-runtime-20kpa-powerful-suction-stick-vacuum-cleaner-8-layer-noise-reduction-handheld-vacuum-for-home-hard-floor-pet-hair.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, which Vacuum supports HEPA filter?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "Dreametech T10 Cordless Vacuum Cleaner, Long Runtime, 20Kpa Powerful Suction Stick Vacuum Cleaner, 8-Layer Noise Reduction Handheld Vacuum for Home Hard Floor Pet Hair",
+                    "B08QTTF2BZ"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 816,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/dreametech-t10-cordless-vacuum-cleaner-long-runtime-20kpa-powerful-suction-stick-vacuum-cleaner-8-layer-noise-reduction-handheld-vacuum-for-home-hard-floor-pet-hair.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/dyson-v11-torque-drive-cordless-vacuum-cleaner-blue-renewed.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/dreametech-t10-cordless-vacuum-cleaner-long-runtime-20kpa-powerful-suction-stick-vacuum-cleaner-8-layer-noise-reduction-handheld-vacuum-for-home-hard-floor-pet-hair.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, does the running time of the vacuum cleaner in Tab 1 last longer than that in Tab 2?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "no"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": "the same running time, 60min",
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 817,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/dreametech-t10-cordless-vacuum-cleaner-long-runtime-20kpa-powerful-suction-stick-vacuum-cleaner-8-layer-noise-reduction-handheld-vacuum-for-home-hard-floor-pet-hair.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/dyson-v11-torque-drive-cordless-vacuum-cleaner-blue-renewed.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/dreametech-t10-cordless-vacuum-cleaner-long-runtime-20kpa-powerful-suction-stick-vacuum-cleaner-8-layer-noise-reduction-handheld-vacuum-for-home-hard-floor-pet-hair.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, does the Vacuum in Tab 2 have Turbo-Mode?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "no"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 818,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/portable-charger-power-bank-26800mah-quick-phone-charge-3-0-fast-charging-power-delivery-external-battery-pack-3-output-2-input-type-c-power-banks-compatible-with-iphone-12-11-samsung-ect.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/solar-charger-power-bank-portable-solar-phone-charger-26800mah-external-battery-bank-with-2-usb-5v-outputs-led-camping-light-waterproof-solar-panel-charging.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/solar-power-bank-30000mah-fmooostore-portable-solar-phone-charger-usb-c-fast-charging-4-output-ports-led-flashlight-external-battery-pack-compatible-iphone-android-camping-outdoor.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/portable-power-battery-bank-pack-charger-for-cell-phones-with-built-in-cable-external-battery-fast-charging-mophie-usb-c-power-bank-charger-6000mah-small-mini-power-bank-battery-backup.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/portable-charger-power-bank-26800mah-quick-phone-charge-3-0-fast-charging-power-delivery-external-battery-pack-3-output-2-input-type-c-power-banks-compatible-with-iphone-12-11-samsung-ect.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, which of these power banks offers higher charging output?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "Solar Power Bank 30000mAh - Fmooostore Portable Solar Phone Charger,USB C Fast Charging 4 Output Ports & LED Flashlight External Battery Pack Compatible iPhone,Android,Camping,Outdoor",
+                    "B08S7D4RQ1"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 820,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/portable-charger-power-bank-26800mah-quick-phone-charge-3-0-fast-charging-power-delivery-external-battery-pack-3-output-2-input-type-c-power-banks-compatible-with-iphone-12-11-samsung-ect.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/solar-charger-power-bank-portable-solar-phone-charger-26800mah-external-battery-bank-with-2-usb-5v-outputs-led-camping-light-waterproof-solar-panel-charging.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/solar-power-bank-30000mah-fmooostore-portable-solar-phone-charger-usb-c-fast-charging-4-output-ports-led-flashlight-external-battery-pack-compatible-iphone-android-camping-outdoor.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/portable-power-battery-bank-pack-charger-for-cell-phones-with-built-in-cable-external-battery-fast-charging-mophie-usb-c-power-bank-charger-6000mah-small-mini-power-bank-battery-backup.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/asnrc-wireless-earbuds-bluetooth-5-0-wireless-earbuds-sports-earbuds-noise-cancelling-wireless-ear-buds-tws-wireless-earbuds-audifonos-bluetooth-inalambricos-wireless-headphones-for-iphone-android.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/true-wireless-earbuds-deep-bass-wireless-earbuds-bluetooth-hifi-stereo-sound-wireless-ear-buds-wireless-headphones-with-microphone-wireless-earbuds-with-portable-charging-case-top-10-bluetooth.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds-bluetooth-5-1-headphones-touch-control-for-android-windows-laptop-ture-wireless-earbuds-ipx7-waterproof-wlvlc-bluetooth-earbuds-35h-playtime-charging-case-green.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, which of the wireless earbuds has the highest average user rating?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "Asnrc Wireless Earbuds,Bluetooth 5.0 Wireless Earbuds,Sports Earbuds Noise Cancelling,Wireless Ear Buds,TWS Wireless Earbuds,audifonos Bluetooth inalambricos,Wireless Headphones for iPhone Android",
+                    "B09QCL1FMT"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 821,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/asnrc-wireless-earbuds-bluetooth-5-0-wireless-earbuds-sports-earbuds-noise-cancelling-wireless-ear-buds-tws-wireless-earbuds-audifonos-bluetooth-inalambricos-wireless-headphones-for-iphone-android.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/true-wireless-earbuds-deep-bass-wireless-earbuds-bluetooth-hifi-stereo-sound-wireless-ear-buds-wireless-headphones-with-microphone-wireless-earbuds-with-portable-charging-case-top-10-bluetooth.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds-bluetooth-5-1-headphones-touch-control-for-android-windows-laptop-ture-wireless-earbuds-ipx7-waterproof-wlvlc-bluetooth-earbuds-35h-playtime-charging-case-green.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, which of these wireless earbuds has better noise cancellation features?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "Asnrc Wireless Earbuds,Bluetooth 5.0 Wireless Earbuds,Sports Earbuds Noise Cancelling,Wireless Ear Buds,TWS Wireless Earbuds,audifonos Bluetooth inalambricos,Wireless Headphones for iPhone Android",
+                    "B09QCL1FMT"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 824,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/asnrc-wireless-earbuds-bluetooth-5-0-wireless-earbuds-sports-earbuds-noise-cancelling-wireless-ear-buds-tws-wireless-earbuds-audifonos-bluetooth-inalambricos-wireless-headphones-for-iphone-android.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, who gave 5 stars for the wireless earbuds on the rightmost tab?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "must_include": [
+                    "John D.",
+                    "Chil"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 825,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/asnrc-wireless-earbuds-bluetooth-5-0-wireless-earbuds-sports-earbuds-noise-cancelling-wireless-ear-buds-tws-wireless-earbuds-audifonos-bluetooth-inalambricos-wireless-headphones-for-iphone-android.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, buy the best rating product with at least 5 reviews.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "program_html"
+            ],
+            "reference_answers": null,
+            "reference_url": "",
+            "program_html": [
+                {
+                    "url": "func:shopping_get_latest_order_url()",
+                    "locator": "document.querySelector(\".order-details-items.ordered\").outerText",
+                    "required_contents": {
+                        "must_include": [
+                            "B09PG1T4L8"
+                        ]
+                    }
+                }
+            ],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 826,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/solar-charger-power-bank-portable-solar-phone-charger-26800mah-external-battery-bank-with-2-usb-5v-outputs-led-camping-light-waterproof-solar-panel-charging.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/solar-power-bank-30000mah-fmooostore-portable-solar-phone-charger-usb-c-fast-charging-4-output-ports-led-flashlight-external-battery-pack-compatible-iphone-android-camping-outdoor.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/portable-power-battery-bank-pack-charger-for-cell-phones-with-built-in-cable-external-battery-fast-charging-mophie-usb-c-power-bank-charger-6000mah-small-mini-power-bank-battery-backup.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/asnrc-wireless-earbuds-bluetooth-5-0-wireless-earbuds-sports-earbuds-noise-cancelling-wireless-ear-buds-tws-wireless-earbuds-audifonos-bluetooth-inalambricos-wireless-headphones-for-iphone-android.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, check if any reviewer mentions \"waterproof\" for these wireless earbuds.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "yes"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 827,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/solar-charger-power-bank-portable-solar-phone-charger-26800mah-external-battery-bank-with-2-usb-5v-outputs-led-camping-light-waterproof-solar-panel-charging.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/solar-power-bank-30000mah-fmooostore-portable-solar-phone-charger-usb-c-fast-charging-4-output-ports-led-flashlight-external-battery-pack-compatible-iphone-android-camping-outdoor.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/portable-power-battery-bank-pack-charger-for-cell-phones-with-built-in-cable-external-battery-fast-charging-mophie-usb-c-power-bank-charger-6000mah-small-mini-power-bank-battery-backup.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/asnrc-wireless-earbuds-bluetooth-5-0-wireless-earbuds-sports-earbuds-noise-cancelling-wireless-ear-buds-tws-wireless-earbuds-audifonos-bluetooth-inalambricos-wireless-headphones-for-iphone-android.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, what is the rating of the Power Bank I'm viewing in Tab 2?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "no rating"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 828,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/solar-charger-power-bank-portable-solar-phone-charger-26800mah-external-battery-bank-with-2-usb-5v-outputs-led-camping-light-waterproof-solar-panel-charging.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/solar-power-bank-30000mah-fmooostore-portable-solar-phone-charger-usb-c-fast-charging-4-output-ports-led-flashlight-external-battery-pack-compatible-iphone-android-camping-outdoor.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/portable-power-battery-bank-pack-charger-for-cell-phones-with-built-in-cable-external-battery-fast-charging-mophie-usb-c-power-bank-charger-6000mah-small-mini-power-bank-battery-backup.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/asnrc-wireless-earbuds-bluetooth-5-0-wireless-earbuds-sports-earbuds-noise-cancelling-wireless-ear-buds-tws-wireless-earbuds-audifonos-bluetooth-inalambricos-wireless-headphones-for-iphone-android.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, gather the titles of Power Bank reviews with 5-star rating.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "must_include": [
+                    "Small but Powerful charger",
+                    "Will recommend",
+                    "Pleased!",
+                    "Amazing product and deal if as advertised!",
+                    "Solid, Huge Capacity and better than the high dollar brands.",
+                    "Portable and Affordable power bank. Very easy-to-use!!",
+                    "Small portable charger",
+                    "High quality power bank!",
+                    "Worth every penny!!"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 829,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/asnrc-wireless-earbuds-bluetooth-5-0-wireless-earbuds-sports-earbuds-noise-cancelling-wireless-ear-buds-tws-wireless-earbuds-audifonos-bluetooth-inalambricos-wireless-headphones-for-iphone-android.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/true-wireless-earbuds-deep-bass-wireless-earbuds-bluetooth-hifi-stereo-sound-wireless-ear-buds-wireless-headphones-with-microphone-wireless-earbuds-with-portable-charging-case-top-10-bluetooth.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds-bluetooth-5-1-headphones-touch-control-for-android-windows-laptop-ture-wireless-earbuds-ipx7-waterproof-wlvlc-bluetooth-earbuds-35h-playtime-charging-case-green.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, which wireless earbuds has most total reviews?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "Wireless Earbuds",
+                    "B09PG1T4L8"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 830,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/asnrc-wireless-earbuds-bluetooth-5-0-wireless-earbuds-sports-earbuds-noise-cancelling-wireless-ear-buds-tws-wireless-earbuds-audifonos-bluetooth-inalambricos-wireless-headphones-for-iphone-android.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/true-wireless-earbuds-deep-bass-wireless-earbuds-bluetooth-hifi-stereo-sound-wireless-ear-buds-wireless-headphones-with-microphone-wireless-earbuds-with-portable-charging-case-top-10-bluetooth.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds-bluetooth-5-1-headphones-touch-control-for-android-windows-laptop-ture-wireless-earbuds-ipx7-waterproof-wlvlc-bluetooth-earbuds-35h-playtime-charging-case-green.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/3pcs-crystal-clear-cosmetic-bag-tsa-air-travel-toiletry-bag-set-with-zipper-vinyl-pvc-make-up-pouch-handle-straps-for-women-men-roybens-waterproof-packing-organizer-storage-diaper-pencil-bags-black.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, add all bags to the shopping cart.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "program_html"
+            ],
+            "reference_answers": null,
+            "reference_url": "",
+            "program_html": [
+                {
+                    "url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/checkout/cart",
+                    "locator": "",
+                    "required_contents": {
+                        "must_include": [
+                            "3Pcs Crystal Clear Cosmetic Bag TSA Air Travel Toiletry Bag Set with Zipper Vinyl PVC Make-up Pouch Handle Straps for Women Men, Roybens Waterproof Packing Organizer Storage Diaper Pencil Bags Black"
+                        ]
+                    }
+                }
+            ],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 831,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/asnrc-wireless-earbuds-bluetooth-5-0-wireless-earbuds-sports-earbuds-noise-cancelling-wireless-ear-buds-tws-wireless-earbuds-audifonos-bluetooth-inalambricos-wireless-headphones-for-iphone-android.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/true-wireless-earbuds-deep-bass-wireless-earbuds-bluetooth-hifi-stereo-sound-wireless-ear-buds-wireless-headphones-with-microphone-wireless-earbuds-with-portable-charging-case-top-10-bluetooth.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wireless-earbuds-bluetooth-5-1-headphones-touch-control-for-android-windows-laptop-ture-wireless-earbuds-ipx7-waterproof-wlvlc-bluetooth-earbuds-35h-playtime-charging-case-green.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/t-shirt-red.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, add the Blue wireless earbuds to my wish list.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "program_html"
+            ],
+            "reference_answers": null,
+            "reference_url": "",
+            "program_html": [
+                {
+                    "url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/wishlist/",
+                    "locator": "document.querySelector('.products-grid.wishlist').outerText",
+                    "required_contents": {
+                        "must_include": [
+                            "Wireless Earbuds Bluetooth 5.1 Headphones Touch Control for Android Windows Laptop Ture Wireless Earbuds IPX7 Waterproof WLVLC Bluetooth Earbuds 35H Playtime Charging Case (Green)"
+                        ]
+                    }
+                }
+            ],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 832,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/asnrc-wireless-earbuds-bluetooth-5-0-wireless-earbuds-sports-earbuds-noise-cancelling-wireless-ear-buds-tws-wireless-earbuds-audifonos-bluetooth-inalambricos-wireless-headphones-for-iphone-android.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/true-wireless-earbuds-deep-bass-wireless-earbuds-bluetooth-hifi-stereo-sound-wireless-ear-buds-wireless-headphones-with-microphone-wireless-earbuds-with-portable-charging-case-top-10-bluetooth.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/true-wireless-earbuds-deep-bass-wireless-earbuds-bluetooth-hifi-stereo-sound-wireless-ear-buds-wireless-headphones-with-microphone-wireless-earbuds-with-portable-charging-case-top-10-bluetooth.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, add both wireless earbuds to the comparison list.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "program_html"
+            ],
+            "reference_answers": null,
+            "reference_url": "",
+            "program_html": [
+                {
+                    "url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/catalog/product_compare/",
+                    "locator": "document.querySelector('[id=\"product-comparison\"').outerText",
+                    "required_contents": {
+                        "must_include": [
+                            "B07H89SS65",
+                            "B09QCL1FMT"
+                        ]
+                    }
+                }
+            ],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 833,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/asnrc-wireless-earbuds-bluetooth-5-0-wireless-earbuds-sports-earbuds-noise-cancelling-wireless-ear-buds-tws-wireless-earbuds-audifonos-bluetooth-inalambricos-wireless-headphones-for-iphone-android.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/v8-energy-healthy-energy-drink-steady-energy-from-black-and-green-tea-pomegranate-blueberry-8-ounce-can-pack-of-24.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/v8-energy-healthy-energy-drink-steady-energy-from-black-and-green-tea-pomegranate-blueberry-8-ounce-can-pack-of-24.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, add the wireless charger in the current tab to the cart.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": "N/A"
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 834,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/mens-sweat-shorts-mens-white-shorts-mens-khaki-shorts-bike-shorts-men-mens-swimming-shorts-black-shorts-mens-men-s-5-inch-shorts-basket-ball-shorts-shorts-for-running-mens-shorts-sets-golfing-pants.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/34-jeans-size-comfortable-shorts-for-men-mens-striped-shorts-mens-surf-shorts-ripped-shorts-mens-white-jean-shorts-mens-checked-shorts-shorts-streetwear-long-sleeve-with-shorts-board-shorts-with-liner.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/34-jeans-size-comfortable-shorts-for-men-mens-striped-shorts-mens-surf-shorts-ripped-shorts-mens-white-jean-shorts-mens-checked-shorts-shorts-streetwear-long-sleeve-with-shorts-board-shorts-with-liner.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, create a bundle order with these shorts sent to my default address.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "program_html"
+            ],
+            "reference_answers": null,
+            "reference_url": "",
+            "program_html": [
+                {
+                    "url": "func:shopping_get_latest_order_url()",
+                    "locator": "document.querySelector(\".order-details-items.ordered\").outerText",
+                    "required_contents": {
+                        "must_include": [
+                            "B09RN3K6MJ",
+                            "B09RMPB9KR"
+                        ]
+                    }
+                }
+            ],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 835,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/womens-winter-fuzzy-socks-warm-non-skid-socks-cozy-fluffy-socks-soft-slipper-socks-non-slip-grip-socks-fleece-socks.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/34-jeans-size-comfortable-shorts-for-men-mens-striped-shorts-mens-surf-shorts-ripped-shorts-mens-white-jean-shorts-mens-checked-shorts-shorts-streetwear-long-sleeve-with-shorts-board-shorts-with-liner.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/womens-winter-fuzzy-socks-warm-non-skid-socks-cozy-fluffy-socks-soft-slipper-socks-non-slip-grip-socks-fleece-socks.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, I want the socks in Tab 1 with the color of the product in Tab 2, is that available?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "no"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 836,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/womens-winter-fuzzy-socks-warm-non-skid-socks-cozy-fluffy-socks-soft-slipper-socks-non-slip-grip-socks-fleece-socks.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/portable-power-battery-bank-pack-charger-for-cell-phones-with-built-in-cable-external-battery-fast-charging-mophie-usb-c-power-bank-charger-6000mah-small-mini-power-bank-battery-backup.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/womens-winter-fuzzy-socks-warm-non-skid-socks-cozy-fluffy-socks-soft-slipper-socks-non-slip-grip-socks-fleece-socks.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, I want the socks in Tab 1 with the color of the product in Tab 2, is that available?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "yes"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 837,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/mens-sweat-shorts-mens-white-shorts-mens-khaki-shorts-bike-shorts-men-mens-swimming-shorts-black-shorts-mens-men-s-5-inch-shorts-basket-ball-shorts-shorts-for-running-mens-shorts-sets-golfing-pants.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/34-jeans-size-comfortable-shorts-for-men-mens-striped-shorts-mens-surf-shorts-ripped-shorts-mens-white-jean-shorts-mens-checked-shorts-shorts-streetwear-long-sleeve-with-shorts-board-shorts-with-liner.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/movie-lovers-ultimate-movie-night-gift-with-dominos-pizza-gift-card-and-movie-snacks-for-a-fantastic-movie-night-gift.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/34-jeans-size-comfortable-shorts-for-men-mens-striped-shorts-mens-surf-shorts-ripped-shorts-mens-white-jean-shorts-mens-checked-shorts-shorts-streetwear-long-sleeve-with-shorts-board-shorts-with-liner.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, buy the shorts with the highest value.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "program_html"
+            ],
+            "reference_answers": null,
+            "reference_url": "",
+            "program_html": [
+                {
+                    "url": "func:shopping_get_latest_order_url()",
+                    "locator": "document.querySelector(\".order-details-items.ordered\").outerText",
+                    "required_contents": {
+                        "must_include": [
+                            "B09RN3K6MJ"
+                        ]
+                    }
+                }
+            ],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 838,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/samsung-galaxy-s21-5g-factory-unlocked-android-cell-phone-us-version-5g-smartphone-pro-grade-camera-8k-video-64mp-high-res-128gb-phantom-violet-sm-g991uzvaxaa.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/samsung-galaxy-s21-5g-factory-unlocked-android-cell-phone-us-version-5g-smartphone-pro-grade-camera-8k-video-64mp-high-res-128gb-phantom-violet-sm-g991uzvaxaa.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, buy the smartphone with the most long-lasting battery.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "program_html"
+            ],
+            "reference_answers": null,
+            "reference_url": "",
+            "program_html": [
+                {
+                    "url": "func:shopping_get_latest_order_url()",
+                    "locator": "document.querySelector(\".order-details-items.ordered\").outerText",
+                    "required_contents": {
+                        "must_include": [
+                            "B08N3J7GJ8",
+                            "S21 Ultra"
+                        ]
+                    }
+                }
+            ],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 843,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/catalogsearch/result/?q=Shorts",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/kudico-men-s-athletic-shorts-5-inch-gym-workout-shorts-slim-stretchy-running-shorts-quick-dry-bodybuilding-training-shorts.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/kudico-men-s-athletic-shorts-5-inch-gym-workout-shorts-slim-stretchy-running-shorts-quick-dry-bodybuilding-training-shorts.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, is the pair of shorts in Tab 2 included in the search results of Tab 1??",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "yes"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 845,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/b-baosity-electric-shaver-for-men-rechargeable-cordless-shavers-wet-dry-razors-for-shaving-trimmer-waterproof-blue-black-3-in-1.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/2-4v-bt184342-bt284342-bt18433-bt28433-bt183348-bt283348-bt-1011-replacement-battery-compatible-with-phone-cs6209-cs6219-cs6229-ds6151-89-1330-01-00-cph-515d-2-pack.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/smart-bulb-a.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, does the Electric Shaver in Tab 1 require the Replacement Battery in Tab 2 to work?",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "no"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    },
+    {
+        "sites": [
+            "shopping"
+        ],
+        "task_id": 847,
+        "require_login": true,
+        "storage_state": "./.auth/shopping_state.json",
+        "close_url": [],
+        "open_url": [
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/grocery-gourmet-food/food-beverage-gifts/snack-gifts.html",
+            "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/make-it-a-red-box-night-fun-movie-and-snack-gift-box.html"
+        ],
+        "start_url": "http://ec2-18-224-173-55.us-east-2.compute.amazonaws.com:7770/make-it-a-red-box-night-fun-movie-and-snack-gift-box.html",
+        "geolocation": null,
+        "intent": "According to my open tabs, find other products in tab 1 that match the brand of the Snack Gift Box in tab 2.",
+        "require_reset": false,
+        "eval": {
+            "eval_types": [
+                "string_match"
+            ],
+            "reference_answers": {
+                "fuzzy_match": [
+                    "Veteran's Day Gift | God Bless America Gourmet Snack Gift Box - Large",
+                    "B004PR6HPQ"
+                ]
+            },
+            "reference_url": "",
+            "program_html": [],
+            "string_note": null,
+            "reference_answer_raw_annotation": null
+        }
+    }
+]

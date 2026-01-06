@@ -478,10 +478,6 @@ export class LLMChatPipeline {
       return false;
     }
     
-    // Save the CURRENT kvCache back (for potential cleanup)
-    const previousKVCache = this.kvCache;
-    const previousFilledLength = this.filledKVCacheLength;
-    
     // Restore the snapshot's KV cache as the main cache
     this.kvCache = snapshot.kvCache;
     this.filledKVCacheLength = snapshot.filledLength;
