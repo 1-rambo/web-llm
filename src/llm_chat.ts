@@ -35,6 +35,107 @@ import {
 
 type ImageURL = ChatCompletionContentPartImage.ImageURL;
 
+/**
+ * 前缀树节点：代表一个会话分支的KV缓存状态
+ * 支持多个子节点，形成树状结构，共享前缀KV缓存
+ */
+interface PrefixTreeNode {
+  // 节点唯一标识
+  nodeId: string;
+  
+  // TVM 序列ID（唯一，用于ForkSequence操作）
+  seqId: number;
+  
+  // 父节点ID（根节点为undefined）
+  parentId?: string;
+  
+  // 子节点ID列表
+  childrenIds: Set<string>;
+  
+  // KV缓存数据（GPU上的PagedKVCache对象）
+  kvCache: tvmjs.TVMObject;
+  
+  // 当前节点的填充长度（相对于该节点的独立计数）
+  filledLength: number;
+  
+  // 该节点处于分支时，相对于父节点的fork位置
+  // -1表示从末尾分叉（默认）
+  forkPosition: number;
+  
+  // 会话状态（包含消息历史）
+  conversation: Conversation;
+  
+  // 创建时间戳（用于LRU策略）
+  createdAt: number;
+  
+  // 最后访问时间戳
+  lastAccessedAt: number;
+  
+  // ✅ 内存追踪：该节点占用的GPU内存大小（字节）
+  // 用于剪枝策略的决策依据
+  memoryUsageBytes: number;
+
+  // ✅ 缓存状态标记：是否在 KVCache 中有实际的缓存数据
+  // true = 缓存存在，可以直接切换
+  // false = 缓存被删除（被剪枝了），需要重新计算
+  isCacheValid: boolean;
+}
+
+/**
+ * 前缀树KV缓存的硬编码内存限制
+ * 当前缀树节点的总内存使用超过此值时，自动触发LRU剪枝
+ * 单位：字节
+ * 
+ * 当前配置：512 MB（典型WebLLM应用场景）
+ * 计算方式：
+ * - Llama-7B (fp16)：单token约5KB
+ * - 预期支持100,000+ token的并发会话树
+ */
+// const PREFIX_TREE_MEMORY_LIMIT = 512 * 1024 * 1024; // 512 MB
+const PREFIX_TREE_MEMORY_LIMIT = 15 * 1024 * 1024; // 15 MB
+
+/**
+ * 剪枝策略的定义
+ */
+enum PruningStrategy {
+  // 最近最少使用（Least Recently Used）
+  LRU = "lru",
+  
+  // 自定义策略（用户提供删除候选）
+  CUSTOM = "custom",
+}
+
+/**
+ * 剪枝候选节点的信息
+ */
+interface PruningCandidate {
+  nodeId: string;
+  memoryUsageBytes: number;
+  lastAccessedAt: number;
+  createdAt: number;
+  messageCount: number;
+  filledLength: number;
+  // 该节点是否有子节点
+  hasChildren: boolean;
+}
+
+/**
+ * 前缀树主结构：管理所有节点和树的拓扑关系
+ */
+interface ConversationPrefixTree {
+  // 所有节点的映射表
+  nodes: Map<string, PrefixTreeNode>;
+  
+  // 根节点ID
+  rootId: string;
+  
+  // 当前活跃节点ID（当前进行推理的节点）
+  activeNodeId: string;
+  
+  // 下一个可用的序列ID计数器（每创建一个节点递增）
+  nextSeqId: number;
+}
+
 export class LLMChatPipeline {
   private config: ChatConfig;
   private tokenizer: Tokenizer;
@@ -64,7 +165,7 @@ export class LLMChatPipeline {
 
   // parameter states
   private params: tvmjs.TVMObject;
-  private kvCache: tvmjs.TVMObject;
+  // KV缓存现在由前缀树管理，通过 getActiveKVCache() 获取
   private logitsOnCPU?: tvmjs.Tensor = undefined;
   private filledKVCacheLength = 0;
 
@@ -77,6 +178,12 @@ export class LLMChatPipeline {
   private resetStatsPerPrefill = true;
   private stopStr: string[];
   private stopTokens: Array<number>;
+  
+  // Model architecture parameters for accurate memory calculation
+  private modelNumLayers = 0;      // Number of transformer layers
+  private modelHiddenDim = 0;       // Hidden dimension size
+  private modelNumHeads = 0;        // Number of attention heads
+  private modelNumKVHeads = 0;      // Number of KV heads (for GQA/MQA models)
 
   // states
   private outputMessage = "";
@@ -147,13 +254,13 @@ export class LLMChatPipeline {
   private sampleIndicesDevice: tvmjs.Tensor;
   private topPDevice: tvmjs.Tensor;
 
-  // Shared context KV Cache snapshots stored in GPU memory
-  // Each snapshot has its own independent KV cache instance
-  private kvCacheSnapshots = new Map<string, {
-    kvCache: tvmjs.TVMObject;  // Independent KV cache for this shared context
-    filledLength: number;
-    conversation: Conversation;
-  }>();
+  // 前缀树：管理多会话的KV缓存层级关系
+  // 每个节点代表一个会话分支，支持多分支共享前缀KV缓存
+  private prefixTree: ConversationPrefixTree;
+  
+  // TVM函数：用于前缀树操作的KV缓存接口
+  private fKVCacheForkSequence: tvmjs.PackedFunc;
+  // private fDebugGetKV: tvmjs.PackedFunc;
 
   constructor(
     tvm: tvmjs.Instance,
@@ -260,6 +367,26 @@ export class LLMChatPipeline {
     if (this.prefillChunkSize <= 0) {
       throw new MinValueError("prefill_chunk_size", 0);
     }
+    
+    // ✅ Extract model architecture parameters from metadata for accurate memory calculation
+    // Model parameters are stored in metadata.kv_cache for TVM compiled models
+    if (metadata.kv_cache) {
+      this.modelNumLayers = metadata.kv_cache.num_hidden_layers || 0;
+      const headDim = metadata.kv_cache.head_dim || 64;  // fallback to typical 64
+      this.modelHiddenDim = (metadata.kv_cache.num_attention_heads || 0) * headDim;
+      this.modelNumHeads = metadata.kv_cache.num_attention_heads || 0;
+      this.modelNumKVHeads = metadata.kv_cache.num_key_value_heads || this.modelNumHeads || 0;
+      log.info(`[Model Config] Layers=${this.modelNumLayers}, Hidden=${this.modelHiddenDim}, Heads=${this.modelNumHeads}, KVHeads=${this.modelNumKVHeads}`);
+    } else if (metadata.model_config) {
+      // Fallback: try model_config if kv_cache not available
+      this.modelNumLayers = metadata.model_config.num_hidden_layers || metadata.model_config.num_layers || 0;
+      this.modelHiddenDim = metadata.model_config.hidden_size || 0;
+      this.modelNumHeads = metadata.model_config.num_attention_heads || 0;
+      this.modelNumKVHeads = metadata.model_config.num_key_value_heads || this.modelNumHeads || 0;
+      log.info(`[Model Config] (via model_config) Layers=${this.modelNumLayers}, Hidden=${this.modelHiddenDim}, Heads=${this.modelNumHeads}, KVHeads=${this.modelNumKVHeads}`);
+    } else {
+      log.warn("[Model Config] No model configuration found in metadata, using default memory estimation");
+    }
 
     // 5. Consolidate KVCache settings: context window, sliding window, attention sink
     this.slidingWindowSize = config.sliding_window_size;
@@ -308,6 +435,14 @@ export class LLMChatPipeline {
       ),
     );
 
+    // Load prefix tree related TVM functions
+    this.fKVCacheForkSequence = this.tvm.detachFromCurrentScope(
+      this.tvm.getGlobalFunc("vm.builtin.kv_state_fork_sequence"),
+    );
+    // this.fDebugGetKV = this.tvm.detachFromCurrentScope(
+    //   this.tvm.getGlobalFunc("vm.builtin.attention_kv_cache_debug_get_kv"),
+    // );
+
     // Create PagedKVCache; we do not expose KVCache config for now
     const fcreateCache = this.vm.getFunction("create_tir_paged_kv_cache");
     const defaultPageSize = 16;
@@ -316,7 +451,9 @@ export class LLMChatPipeline {
       this.slidingWindowSize != -1
         ? this.slidingWindowSize
         : this.contextWindowSize;
-    this.kvCache = this.tvm.detachFromCurrentScope(
+    
+    // Create initial KV Cache for root node
+    const initialKVCache = this.tvm.detachFromCurrentScope(
       fcreateCache(
         this.tvm.makeShapeTuple([defaultMaxNumSequence]), // max_num_sequence
         this.tvm.makeShapeTuple([maxTotalSeqLen]), // max_total_sequence_length
@@ -325,8 +462,47 @@ export class LLMChatPipeline {
         this.tvm.makeShapeTuple([this.slidingWindowSize != -1 ? 1 : 0]),
       ),
     );
-
     this.filledKVCacheLength = 0;
+    // Initialize prefix tree BEFORE calling resetChat
+    // Create root node with initial kvCache
+    const rootNodeId = "root";
+    const rootNode: PrefixTreeNode = {
+      nodeId: rootNodeId,
+      seqId: 0,  // 根节点使用序列ID 0
+      parentId: undefined,
+      childrenIds: new Set<string>(),
+      kvCache: initialKVCache,
+      filledLength: this.filledKVCacheLength,
+      forkPosition: -1,
+      conversation: this.conversation,
+      createdAt: Date.now(),
+      lastAccessedAt: Date.now(),
+      memoryUsageBytes: 0,  // ✅ 初始内存为0，后续会更新
+      isCacheValid: true,   // ✅ 根节点的缓存总是有效的
+    };
+
+    this.prefixTree = {
+      nodes: new Map<string, PrefixTreeNode>([[rootNodeId, rootNode]]),
+      rootId: rootNodeId,
+      activeNodeId: rootNodeId,
+      nextSeqId: 1,  // 下一个可用序列ID从1开始
+    };
+
+    log.info("Prefix tree initialized with root node: ", rootNodeId);
+
+    // ✅ 在调用 resetChat() 前，先为根节点初始化序列
+    // 清空 KVCache 并添加根序列
+    this.fclearKVCaches(initialKVCache);
+    this.fKVCacheAddSequence!(initialKVCache, new tvmjs.Scalar(0, "int64"));
+    if (this.slidingWindowSize != -1) {
+      this.fKVCacheEnableSlidingWindowForSeq(
+        initialKVCache,
+        new tvmjs.Scalar(0, "int64"),
+        new tvmjs.Scalar(this.slidingWindowSize, "int32"),
+        new tvmjs.Scalar(this.attentionSinkSize, "int32"),
+      );
+    }
+
     this.resetChat(); // especially needed for PagedKVCache as we need to call fKVCacheAddSequence
 
     // Initialize WebGPU sampling related device tensors
@@ -359,7 +535,11 @@ export class LLMChatPipeline {
     this.embed.dispose();
     this.image_embed?.dispose();
     this.vm.dispose();
-    this.kvCache.dispose();
+    // ✅ 所有节点共享同一个KVCache，只需dispose一次
+    const rootNode = this.prefixTree.nodes.get(this.prefixTree.rootId);
+    if (rootNode) {
+      rootNode.kvCache.dispose();
+    }
     this.fclearKVCaches.dispose();
     this.logitsOnCPU?.dispose();
     this.tvm.dispose();
@@ -401,105 +581,610 @@ export class LLMChatPipeline {
   }
 
   /**
+   * 获取当前活跃节点的KV缓存
+   */
+  private getActiveKVCache(): tvmjs.TVMObject {
+    const activeNode = this.prefixTree.nodes.get(this.prefixTree.activeNodeId);
+    if (!activeNode) {
+      throw new Error(`Active node ${this.prefixTree.activeNodeId} not found in prefix tree`);
+    }
+    return activeNode.kvCache;
+  }
+
+  /**
+   * 获取当前填充的 KV 缓存长度
+   */
+  getFilledKVCacheLength(): number {
+    return this.filledKVCacheLength;
+  }
+
+  /**
+   * 设置填充的 KV 缓存长度
+   * ✅ 用于前缀树场景：保存/恢复前缀长度以实现 KV 缓存复用
+   */
+  setFilledKVCacheLength(length: number): void {
+    this.filledKVCacheLength = length;
+    log.info(`[PrefixTree] filledKVCacheLength set to ${length}`);
+  }
+
+  /**
    * Reset KV Cache
    */
   resetKVCache() {
-    this.fclearKVCaches(this.kvCache);
-    this.fKVCacheAddSequence!(this.kvCache, new tvmjs.Scalar(0, "int64"));
+    const activeNode = this.prefixTree.nodes.get(this.prefixTree.activeNodeId)!;
+    const kvCache = this.getActiveKVCache();
+    
+    // 移除活跃节点的旧序列
+    this.fKVCacheRemoveSequence!(kvCache, new tvmjs.Scalar(activeNode.seqId, "int64"));
+    
+    // 重新添加该序列
+    this.fKVCacheAddSequence!(kvCache, new tvmjs.Scalar(activeNode.seqId, "int64"));
+    
     if (this.slidingWindowSize != -1) {
       this.fKVCacheEnableSlidingWindowForSeq(
-        this.kvCache,
-        new tvmjs.Scalar(0, "int64"),
+        kvCache,
+        new tvmjs.Scalar(activeNode.seqId, "int64"),
         new tvmjs.Scalar(this.slidingWindowSize, "int32"),
         new tvmjs.Scalar(this.attentionSinkSize, "int32"),
       );
     }
   }
 
-  saveKVCacheSnapshot(contextId: string): void {
-    // Deep clone the conversation state
-    const clonedConversation = Object.assign(
-      Object.create(Object.getPrototypeOf(this.conversation)),
-      this.conversation
-    );
-    clonedConversation.messages = [...this.conversation.messages];
-    
-    // DEBUG: Output KV cache details BEFORE saving
-    log.info(`[DEBUG] Saving KV cache snapshot "${contextId}":`);
-    log.info(`  - filledKVCacheLength: ${this.filledKVCacheLength}`);
-    
-    // CRITICAL: Save the CURRENT kvCache to snapshot (transfer ownership)
-    // The current kvCache contains all the prefilled data we want to preserve
-    this.kvCacheSnapshots.set(contextId, {
-      kvCache: this.kvCache,  // Transfer the current KV cache to the snapshot
-      filledLength: this.filledKVCacheLength,
-      conversation: clonedConversation,
-    });
-    
-    // DEBUG: Verify what was saved
-    const savedSnapshot = this.kvCacheSnapshots.get(contextId)!;
-    log.info(`[DEBUG] Snapshot saved successfully:`);
-    log.info(`  - Saved filledLength: ${savedSnapshot.filledLength}`);
-    log.info(`  - Saved kvCache exists: ${savedSnapshot.kvCache !== undefined}`);
-    log.info(`  - Saved conversation messages: ${savedSnapshot.conversation.messages.length}`);
-    
-    // Create a NEW kvCache for future operations
-    this.tvm.beginScope();
-    const fcreateCache = this.vm.getFunction("create_tir_paged_kv_cache");
-    const defaultPageSize = 16;
-    const defaultMaxNumSequence = 1;
-    const maxTotalSeqLen =
-      this.slidingWindowSize != -1
-        ? this.slidingWindowSize
-        : this.contextWindowSize;
-    
-    this.kvCache = this.tvm.detachFromCurrentScope(
-      fcreateCache(
-        this.tvm.makeShapeTuple([defaultMaxNumSequence]),
-        this.tvm.makeShapeTuple([maxTotalSeqLen]),
-        this.tvm.makeShapeTuple([this.prefillChunkSize]),
-        this.tvm.makeShapeTuple([defaultPageSize]),
-        this.tvm.makeShapeTuple([this.slidingWindowSize != -1 ? 1 : 0]),
-      ),
-    );
-    this.tvm.endScope();
-    
-    // Reset the new kvCache
-    this.resetKVCache();
-    this.filledKVCacheLength = 0;
-    
-    log.info(`[DEBUG] Created new kvCache for future use`);
-    log.info(`Saved KV cache snapshot "${contextId}" with ${savedSnapshot.filledLength} tokens`);
-  }
-
-  loadKVCacheSnapshot(contextId: string): boolean {
-    const snapshot = this.kvCacheSnapshots.get(contextId);
-    if (!snapshot) {
+  /**
+   * 在当前节点处创建一个新的会话分支节点
+   * 新节点从当前活跃节点的末尾分叉，使用ForkSequence共享KV缓存前缀
+   * 
+   * @param nodeId 新节点的唯一标识
+   * @returns true 如果分支创建成功
+   */
+  createConversationBranch(nodeId: string): boolean {
+    if (this.prefixTree.nodes.has(nodeId)) {
+      log.warn(`Node "${nodeId}" already exists in prefix tree`);
       return false;
     }
+
+    const activeNode = this.prefixTree.nodes.get(this.prefixTree.activeNodeId);
+    if (!activeNode) {
+      log.error("Active node not found in prefix tree");
+      return false;
+    }
+
+    log.info(`[PrefixTree] Creating branch "${nodeId}" from active node "${this.prefixTree.activeNodeId}"`);
+
+    // ✅ 关键改变：所有节点共享同一个 KVCache 对象
+    // 通过 seqId 在 KVCache 内部区分不同的对话分支
+    const sharedKVCache = this.getActiveKVCache();
     
-    // Restore the snapshot's KV cache as the main cache
-    this.kvCache = snapshot.kvCache;
-    this.filledKVCacheLength = snapshot.filledLength;
+    // 为新节点分配唯一的序列ID
+    const newSeqId = this.prefixTree.nextSeqId++;
+    const parentSeqId = activeNode.seqId;
     
-    // Restore conversation state (deep clone to avoid mutation)
+    // Core operation!!
+    // 使用 ForkSequence 在同一个 KVCache 内部分叉
+    // fork_pos = -1 表示从末尾分叉，继承所有前缀KV数据
+    // ForkSequence 会自动创建新序列，不需要提前调用 AddSequence
+    try {
+      this.fKVCacheForkSequence(
+        sharedKVCache,
+        new tvmjs.Scalar(parentSeqId, "int64"),  // parent_seq_id
+        new tvmjs.Scalar(newSeqId, "int64"),     // child_seq_id
+        new tvmjs.Scalar(-1, "int64"),           // fork_pos
+      );
+      
+      // 如果启用了滑动窗口，为新序列启用
+      if (this.slidingWindowSize != -1) {
+        this.fKVCacheEnableSlidingWindowForSeq(
+          sharedKVCache,
+          new tvmjs.Scalar(newSeqId, "int64"),
+          new tvmjs.Scalar(this.slidingWindowSize, "int32"),
+          new tvmjs.Scalar(this.attentionSinkSize, "int32"),
+        );
+      }
+      
+      log.info(`[PrefixTree] ForkSequence completed for node "${nodeId}" with seqId=${newSeqId} from parent seqId=${parentSeqId}`);
+    } catch (e) {
+      log.error(`[PrefixTree] ForkSequence failed: ${e}`);
+      this.prefixTree.nextSeqId--;
+      return false;
+    }
+
+    // 深度克隆父节点的会话状态
+    // ✅ 关键：必须完全深复制 conversation 对象及其所有嵌套属性
     const clonedConversation = Object.assign(
-      Object.create(Object.getPrototypeOf(snapshot.conversation)),
-      snapshot.conversation
+      Object.create(Object.getPrototypeOf(activeNode.conversation)),
+      activeNode.conversation
     );
-    clonedConversation.messages = [...snapshot.conversation.messages];
-    this.conversation = clonedConversation;
+    // 深复制 messages 数组中的每个消息对象
+    clonedConversation.messages = activeNode.conversation.messages.map((msg: any) => ({
+      ...msg
+    }));
     
-    // We could dispose previousKVCache here if needed, but that would free memory
-    // For now, just let it be garbage collected
-    // TODO: Consider proper cleanup strategy
-    
-    log.info(`Loaded KV cache snapshot "${contextId}" with ${this.filledKVCacheLength} tokens`);
+    log.info(`[PrefixTree] Cloned conversation for node "${nodeId}": ${clonedConversation.messages.length} messages, ` +
+             `parent filledLength=${activeNode.filledLength}`);
+
+    // 创建新的前缀树节点
+    const newNode: PrefixTreeNode = {
+      nodeId: nodeId,
+      seqId: newSeqId,
+      parentId: activeNode.nodeId,
+      childrenIds: new Set<string>(),
+      kvCache: sharedKVCache,  // share the same KVCache
+      filledLength: activeNode.filledLength,  // ✅ 从父节点继承 filledLength
+      forkPosition: activeNode.filledLength,
+      conversation: clonedConversation,
+      createdAt: Date.now(),
+      lastAccessedAt: Date.now(),
+      memoryUsageBytes: this.calculateKVCacheMemory(activeNode.filledLength),  // ✅ 按照当前 filledLength 重新计算，而不是直接继承
+      isCacheValid: true,   // ✅ 新创建的节点的缓存总是有效的
+    };
+
+    // 更新树结构
+    this.prefixTree.nodes.set(nodeId, newNode);
+    activeNode.childrenIds.add(nodeId);
+
+    log.info(`[PrefixTree] Branch created: ` +
+             `parent="${activeNode.nodeId}"(filledLength=${activeNode.filledLength}), ` +
+             `child="${nodeId}"(filledLength=${newNode.filledLength}), ` +
+             `forkPos=${newNode.forkPosition}`);
     return true;
   }
 
+  /**
+   * 找到最近的、缓存仍然有效的祖先节点
+   */
+  private findNearestValidAncestor(nodeId: string): PrefixTreeNode | undefined {
+    let currentNode = this.prefixTree.nodes.get(nodeId);
+    
+    while (currentNode) {
+      if (currentNode.isCacheValid) {
+        return currentNode;
+      }
+      currentNode = currentNode.parentId ? this.prefixTree.nodes.get(currentNode.parentId) : undefined;
+    }
+    
+    return undefined;
+  }
+
+  /**
+   * 切换到指定的节点，恢复该节点的KV缓存和会话状态
+   * 
+   * @param nodeId 目标节点ID
+   * @returns true 如果切换成功；false 如果节点缓存无效（需要重建）
+   */
+  switchToNode(nodeId: string): boolean {
+    const targetNode = this.prefixTree.nodes.get(nodeId);
+    if (!targetNode) {
+      log.error(`Node "${nodeId}" not found in prefix tree`);
+      return false;
+    }
+
+    // ✅ 如果目标节点的缓存无效，返回 false，让应用层处理
+    if (!targetNode.isCacheValid) {
+      log.warn(`[PrefixTree] Node "${nodeId}" cache is invalid (was pruned), cannot switch directly`);
+      return false;
+    }
+
+    const prevNodeId = this.prefixTree.activeNodeId;
+    const prevNode = this.prefixTree.nodes.get(prevNodeId);
+    const prevFilledLength = this.filledKVCacheLength;
+    
+    log.info(`[PrefixTree] Switching from node "${prevNodeId}" (filledLength=${prevFilledLength}) to node "${nodeId}" (filledLength=${targetNode.filledLength})`);
+
+    // 更新当前活跃节点为目标节点
+    // KV缓存通过前缀树结构访问，不再保持在this.kvCache中
+    this.filledKVCacheLength = targetNode.filledLength;
+    this.conversation = targetNode.conversation;
+    this.prefixTree.activeNodeId = nodeId;
+
+    // ✅ 更新访问时间：访问节点及其所有祖先
+    // 这样LRU算法在删除节点时不会删除活跃路径上的节点
+    const now = Date.now();
+    let currentNode: PrefixTreeNode | undefined = targetNode;
+    while (currentNode) {
+      currentNode.lastAccessedAt = now;
+      currentNode = currentNode.parentId ? this.prefixTree.nodes.get(currentNode.parentId) : undefined;
+    }
+
+    log.info(`[PrefixTree] Switched successfully. ` +
+             `filledLength=${this.filledKVCacheLength} (from ${prevFilledLength}), ` +
+             `messages=${this.conversation.messages.length}, seqId=${targetNode.seqId}`);
+    return true;
+  }
+
+  /**
+   * 删除指定节点及其所有后代节点
+   * 递归删除子树，释放GPU内存
+   * 
+   * @param nodeId 要删除的节点ID
+   * @returns true 如果删除成功
+   */
+  deleteNode(nodeId: string): boolean {
+    const nodeToDelete = this.prefixTree.nodes.get(nodeId);
+    if (!nodeToDelete) {
+      log.warn(`Node "${nodeId}" not found in prefix tree, nothing to delete`);
+      return false;
+    }
+
+    if (nodeId === this.prefixTree.rootId) {
+      log.warn("Cannot delete root node");
+      return false;
+    }
+
+    log.info(`[PrefixTree] Marking cache invalid for node "${nodeId}" and its subtree`);
+
+    // 递归标记所有子节点的缓存为无效
+    const childrenToMark = Array.from(nodeToDelete.childrenIds);
+    for (const childId of childrenToMark) {
+      this.deleteNode(childId);
+    }
+
+    // 从 KVCache 中删除该序列的缓存数据，真正释放显存
+    try {
+      const kvCache = this.getActiveKVCache();
+      this.fKVCacheRemoveSequence!(kvCache, new tvmjs.Scalar(nodeToDelete.seqId, "int64"));
+      log.info(`[PrefixTree] Removed seqId=${nodeToDelete.seqId} from KVCache`);
+    } catch (e) {
+      log.warn(`[PrefixTree] Failed to remove seqId=${nodeToDelete.seqId} from KVCache: ${e}`);
+    }
+
+    // ✅ 标记该节点的缓存为无效，但保留节点结构和对话历史
+    nodeToDelete.isCacheValid = false;
+    log.info(`[PrefixTree] Node "${nodeId}" cache marked as invalid (but conversation preserved)`);
+    return true;
+  }
+
+  /**
+   * 获取前缀树中的节点信息（用于调试和监控）
+   */
+  getPrefixTreeNodeInfo(nodeId: string): {
+    nodeId: string;
+    parentId?: string;
+    childrenIds: string[];
+    filledLength: number;
+    forkPosition: number;
+    messageCount: number;
+    createdAt: number;
+    lastAccessedAt: number;
+    isActive: boolean;
+  } | null {
+    const node = this.prefixTree.nodes.get(nodeId);
+    if (!node) {
+      return null;
+    }
+
+    return {
+      nodeId: node.nodeId,
+      parentId: node.parentId,
+      childrenIds: Array.from(node.childrenIds),
+      filledLength: node.filledLength,
+      forkPosition: node.forkPosition,
+      messageCount: node.conversation.messages.length,
+      createdAt: node.createdAt,
+      lastAccessedAt: node.lastAccessedAt,
+      isActive: this.prefixTree.activeNodeId === nodeId,
+    };
+  }
+
+  /**
+   * 获取整个前缀树的统计信息
+   */
+  getPrefixTreeStats(): {
+    totalNodes: number;
+    rootNodeId: string;
+    activeNodeId: string;
+    nodeIds: string[];
+    treeDepth: number;
+  } {
+    const calculateDepth = (nodeId: string, visited = new Set<string>()): number => {
+      if (visited.has(nodeId)) return 0;
+      visited.add(nodeId);
+
+      const node = this.prefixTree.nodes.get(nodeId);
+      if (!node || node.childrenIds.size === 0) {
+        return 1;
+      }
+
+      let maxChildDepth = 0;
+      for (const childId of node.childrenIds) {
+        maxChildDepth = Math.max(maxChildDepth, calculateDepth(childId, visited));
+      }
+      return maxChildDepth + 1;
+    };
+
+    return {
+      totalNodes: this.prefixTree.nodes.size,
+      rootNodeId: this.prefixTree.rootId,
+      activeNodeId: this.prefixTree.activeNodeId,
+      nodeIds: Array.from(this.prefixTree.nodes.keys()),
+      treeDepth: calculateDepth(this.prefixTree.rootId),
+    };
+  }
+
+  //-----------------------------------------------
+  // 6.6. 前缀树内存管理与剪枝接口
+  //-----------------------------------------------
+
+  /**
+   * 更新指定节点的内存占用信息
+   * 
+   * @param nodeId 节点ID
+   * @param memoryBytes 新的内存占用大小（字节）
+   */
+  updateNodeMemoryUsage(nodeId: string, memoryBytes: number): void {
+    const node = this.prefixTree.nodes.get(nodeId);
+    if (node) {
+      const oldMemory = node.memoryUsageBytes;
+      node.memoryUsageBytes = memoryBytes;
+      log.info(`[PrefixTree Memory] Updated node "${nodeId}" memory: ${oldMemory} → ${memoryBytes} bytes`);
+    }
+  }
+
+  /**
+   * 计算整个前缀树的总内存占用（所有节点的内存之和）
+   * 
+   * @returns 总内存占用字节数
+   */
+  calculateTotalMemoryUsage(): number {
+    let totalMemory = 0;
+    for (const node of this.prefixTree.nodes.values()) {
+      totalMemory += node.memoryUsageBytes;
+    }
+    return totalMemory;
+  }
+
+  /**
+   * 获取前缀树中的内存统计信息
+   * 
+   * @returns 包含总内存、各节点内存分布的详细统计
+   */
+  getPrefixTreeMemoryStats(): {
+    totalMemoryBytes: number;
+    nodeMemoryMap: Map<string, number>;
+    avgNodeMemoryBytes: number;
+    maxNodeMemoryBytes: number;
+    minNodeMemoryBytes: number;
+  } {
+    const nodeMemoryMap = new Map<string, number>();
+    let totalMemory = 0;
+    let maxMemory = 0;
+    let minMemory = Infinity;
+
+    for (const [nodeId, node] of this.prefixTree.nodes) {
+      const memory = node.memoryUsageBytes;
+      nodeMemoryMap.set(nodeId, memory);
+      totalMemory += memory;
+      maxMemory = Math.max(maxMemory, memory);
+      minMemory = Math.min(minMemory, memory);
+    }
+
+    const avgMemory = this.prefixTree.nodes.size > 0 
+      ? totalMemory / this.prefixTree.nodes.size 
+      : 0;
+
+    return {
+      totalMemoryBytes: totalMemory,
+      nodeMemoryMap: nodeMemoryMap,
+      avgNodeMemoryBytes: avgMemory,
+      maxNodeMemoryBytes: maxMemory,
+      minNodeMemoryBytes: minMemory === Infinity ? 0 : minMemory,
+    };
+  }
+
+  /**
+   * 获取可以被剪枝的候选节点列表（排除根节点和当前活跃节点）
+   * 
+   * @returns 剪枝候选节点列表
+   */
+  getPrunableCandidates(): PruningCandidate[] {
+    const candidates: PruningCandidate[] = [];
+
+    for (const [nodeId, node] of this.prefixTree.nodes) {
+      // 不能删除根节点和活跃节点
+      if (nodeId === this.prefixTree.rootId || nodeId === this.prefixTree.activeNodeId) {
+        continue;
+      }
+
+      candidates.push({
+        nodeId: nodeId,
+        memoryUsageBytes: node.memoryUsageBytes,
+        lastAccessedAt: node.lastAccessedAt,
+        createdAt: node.createdAt,
+        messageCount: node.conversation.messages.length,
+        filledLength: node.filledLength,
+        hasChildren: node.childrenIds.size > 0,
+      });
+    }
+
+    return candidates;
+  }
+
+  /**
+   * 执行剪枝：根据指定策略删除节点以释放内存
+   * 当总内存超过上界时自动触发
+   * 
+   * @param memoryLimit 内存上界（字节）
+   * @param strategy 剪枝策略
+   * @param customSelector 自定义选择器（当 strategy=CUSTOM 时使用）
+   *   接收候选节点列表，返回要删除的节点ID列表
+   * @returns 本次剪枝释放的内存总量（字节）
+   */
+  performPruning(
+    memoryLimit: number,
+    strategy: PruningStrategy = PruningStrategy.LRU,
+    customSelector?: (candidates: PruningCandidate[]) => string[],
+  ): number {
+    const currentMemory = this.calculateTotalMemoryUsage();
+    
+    if (currentMemory <= memoryLimit) {
+      log.info(`[PrefixTree Pruning] Memory ${currentMemory} bytes is within limit ${memoryLimit}, no pruning needed`);
+      return 0;
+    }
+
+    log.info(`[PrefixTree Pruning] Triggered: current=${currentMemory}B, limit=${memoryLimit}B, excess=${currentMemory - memoryLimit}B`);
+
+    // 📊 DEBUG: 列出所有节点的内存情况
+    const memoryStats = this.getPrefixTreeMemoryStats();
+    log.info(`[PrefixTree Pruning] Memory breakdown: total=${memoryStats.totalMemoryBytes}B, avg=${memoryStats.avgNodeMemoryBytes.toFixed(0)}B, max=${memoryStats.maxNodeMemoryBytes}B, min=${memoryStats.minNodeMemoryBytes}B`);
+    for (const [nodeId, memory] of memoryStats.nodeMemoryMap) {
+      const nodeInfo = this.prefixTree.nodes.get(nodeId);
+      const isActive = nodeId === this.prefixTree.activeNodeId;
+      const isRoot = nodeId === this.prefixTree.rootId;
+      log.info(`[PrefixTree Pruning]   node="${nodeId}" memory=${memory}B filledLength=${nodeInfo?.filledLength || 0} (active=${isActive}, root=${isRoot})`);
+    }
+
+    const candidates = this.getPrunableCandidates();
+    if (candidates.length === 0) {
+      log.warn("[PrefixTree Pruning] No candidates available for pruning (only root/active nodes exist)");
+      return 0;
+    }
+
+    log.info(`[PrefixTree Pruning] Found ${candidates.length} prunable candidates`);
+
+    // 根据策略选择要删除的节点
+    let nodesToDelete: string[] = [];
+    
+    if (strategy === PruningStrategy.LRU) {
+      nodesToDelete = this._selectByLRU(candidates, memoryLimit, currentMemory);
+    } else if (strategy === PruningStrategy.CUSTOM) {
+      if (!customSelector) {
+        log.warn("[PrefixTree Pruning] Custom strategy selected but no selector provided, falling back to LRU");
+        nodesToDelete = this._selectByLRU(candidates, memoryLimit, currentMemory);
+      } else {
+        nodesToDelete = customSelector(candidates);
+      }
+    }
+
+    log.info(`[PrefixTree Pruning] Selected ${nodesToDelete.length} nodes for deletion using strategy: ${strategy}`);
+
+    // 执行删除并累计释放内存
+    let freedMemory = 0;
+    for (const nodeId of nodesToDelete) {
+      const node = this.prefixTree.nodes.get(nodeId);
+      if (node) {
+        freedMemory += node.memoryUsageBytes;
+        this.deleteNode(nodeId);
+      }
+    }
+
+    log.info(`[PrefixTree Pruning] Completed: freed ${freedMemory}B, new total memory ${this.calculateTotalMemoryUsage()}B`);
+    return freedMemory;
+  }
+
+  /**
+   * 【内部方法】改进的 LRU 剪枝策略：从叶子节点开始逐个尝试删除
+   * 
+   * 算法：
+   * 1. 获取所有叶子节点（没有子节点的节点）
+   * 2. 按 lastAccessedAt 排序（最久未访问的优先）
+   * 3. 逐个尝试删除叶子节点，检查是否满足内存限制
+   * 4. 当删除一个叶子节点后，其父节点可能变成新的叶子节点，重复过程
+   * 5. 这样避免了同时删除整个子树的问题
+   */
+  private _selectByLRU(
+    candidates: PruningCandidate[],
+    memoryLimit: number,
+    currentMemory: number,
+  ): string[] {
+    const targetMemory = currentMemory - memoryLimit; // 需要释放的内存量
+    const toDelete: string[] = [];
+    let freedMemory = 0;
+    
+    // 创建一个模拟的前缀树副本，用于跟踪哪些节点被标记为删除
+    const markedForDeletion = new Set<string>();
+    
+    // 构建节点的子节点关系映射，用于快速找到叶子节点
+    const nodeChildren = new Map<string, Set<string>>();
+    for (const [nodeId, node] of this.prefixTree.nodes) {
+      nodeChildren.set(nodeId, new Set(node.childrenIds));
+    }
+    
+    while (freedMemory < targetMemory && candidates.length > 0) {
+      // 找出当前的叶子节点候选（没有或所有子节点都被标记删除的节点）
+      const leafCandidates: PruningCandidate[] = [];
+      
+      for (const candidate of candidates) {
+        if (markedForDeletion.has(candidate.nodeId)) {
+          continue; // 已标记删除，跳过
+        }
+        
+        const node = this.prefixTree.nodes.get(candidate.nodeId);
+        if (!node) continue;
+        
+        // 检查该节点是否是叶子节点或者所有子节点都被标记删除
+        let isLeaf = true;
+        for (const childId of node.childrenIds) {
+          if (!markedForDeletion.has(childId)) {
+            isLeaf = false;
+            break;
+          }
+        }
+        
+        if (isLeaf) {
+          leafCandidates.push(candidate);
+        }
+      }
+      
+      if (leafCandidates.length === 0) {
+        // 没有找到叶子节点候选，说明剩余候选都有活跃子节点，无法删除
+        break;
+      }
+      
+      // 按 lastAccessedAt 升序排列（最久未访问的在前）
+      leafCandidates.sort((a, b) => a.lastAccessedAt - b.lastAccessedAt);
+      
+      // 删除最久未访问的叶子节点
+      const toDeleteLeaf = leafCandidates[0];
+      markedForDeletion.add(toDeleteLeaf.nodeId);
+      toDelete.push(toDeleteLeaf.nodeId);
+      
+      // 计算该节点的内存占用（仅节点自身，不包括子节点，因为子节点要么是活跃的，要么已被标记删除）
+      freedMemory += toDeleteLeaf.memoryUsageBytes;
+      
+      log.info(`[PrefixTree Pruning] LRU marked leaf node "${toDeleteLeaf.nodeId}" for deletion, freed ${toDeleteLeaf.memoryUsageBytes}B (total: ${freedMemory}B)`);
+    }
+
+    log.info(`[PrefixTree Pruning] LRU selected ${toDelete.length} nodes to free ~${freedMemory} bytes`);
+    return toDelete;
+  }
+
+  /**
+   * 【内部辅助方法】计算一个节点及其所有后代的总内存占用
+   */
+  private _calculateSubtreeMemory(nodeId: string): number {
+    const node = this.prefixTree.nodes.get(nodeId);
+    if (!node) {
+      return 0;
+    }
+
+    let totalMemory = node.memoryUsageBytes;
+    for (const childId of node.childrenIds) {
+      totalMemory += this._calculateSubtreeMemory(childId);
+    }
+    return totalMemory;
+  }
+
+  /**
+   * @deprecated 使用 createConversationBranch 代替
+   * 保留用于向后兼容，实际映射到前缀树操作
+   */
+  saveKVCacheSnapshot(contextId: string): void {
+    this.createConversationBranch(contextId);
+  }
+
+  /**
+   * @deprecated 使用 switchToNode 代替
+   * 保留用于向后兼容，实际映射到前缀树操作
+   */
+  loadKVCacheSnapshot(contextId: string): boolean {
+    return this.switchToNode(contextId);
+  }
+
+  /**
+   * @deprecated 使用 getPrefixTreeNodeInfo 代替
+   * 保留用于向后兼容
+   */
   hasKVCacheSnapshot(contextId: string): boolean {
-    return this.kvCacheSnapshots.has(contextId);
+    return this.prefixTree.nodes.has(contextId);
   }
 
   /**
@@ -637,6 +1322,106 @@ export class LLMChatPipeline {
   }
 
   /**
+   * Initialize grammar matcher asynchronously based on genConfig.
+   * Can be awaited or run in parallel with other operations.
+   * 
+   * @param genConfig Generation config with optional response_format
+   * @returns Promise that resolves when grammar matcher is ready, or undefined if not needed
+   */
+  private async initializeGrammarMatcher(
+    genConfig?: GenerationConfig,
+  ): Promise<void> {
+    if (
+      !genConfig?.response_format?.type ||
+      (genConfig.response_format.type !== "json_object" &&
+        genConfig.response_format.type !== "grammar")
+    ) {
+      return Promise.resolve();
+    }
+
+    const curSchemaOrGrammarStr =
+      genConfig.response_format.schema || genConfig.response_format.grammar;
+
+    if (
+      curSchemaOrGrammarStr === this.schemaOrGrammarStr &&
+      this.grammarMatcher
+    ) {
+      // Reuse existing grammar matcher
+      const tGrammarInitStart = performance.now();
+      log.info("Reuse grammar matcher.");
+      this.grammarMatcher.reset();
+      this.curRoundGrammarInitTotalTime =
+        (performance.now() - tGrammarInitStart) / 1e3;
+      return Promise.resolve();
+    }
+
+    // Initialize new grammar matcher
+    return new Promise(async (resolve) => {
+      const tGrammarInitStart = performance.now();
+      log.info("Initialize new grammar matcher.");
+      if (this.grammarMatcher) {
+        this.grammarMatcher.dispose();
+      }
+      if (this.xgTokenizerInfo === undefined) {
+        log.info("Initialize token table.");
+        const rawTokenTable = getTokenTableFromTokenizer(this.tokenizer);
+        this.xgTokenizerInfo = await xgr.TokenizerInfo.createTokenizerInfo(
+          rawTokenTable,
+          this.token_postproc_method,
+          this.prepend_space_in_encode,
+          this.fullVocabSize,
+          this.stopTokens,
+        );
+        this.grammarCompiler = await xgr.GrammarCompiler.createGrammarCompiler(
+          this.xgTokenizerInfo,
+        );
+      }
+      const grammar: xgr.CompiledGrammar =
+        curSchemaOrGrammarStr === undefined
+          ? await this.grammarCompiler!.compileBuiltinJSONGrammar()
+          : genConfig?.response_format?.type === "json_object"
+            ? await this.grammarCompiler!.compileJSONSchema(
+                curSchemaOrGrammarStr,
+              )
+            : await this.grammarCompiler!.compileGrammar(
+                curSchemaOrGrammarStr,
+              );
+      this.grammarMatcher =
+        await xgr.GrammarMatcher.createGrammarMatcher(grammar);
+      grammar.dispose();
+      this.schemaOrGrammarStr = curSchemaOrGrammarStr;
+      this.curRoundGrammarInitTotalTime =
+        (performance.now() - tGrammarInitStart) / 1e3;
+      resolve();
+    });
+  }
+
+  /**
+   * Reset per-round state variables and prepare for new prefill/generation round.
+   */
+  private resetPerRoundState(): void {
+    this.outputIds = [];
+    this.appearedTokensFreq.clear();
+    this.outputMessage = "";
+    this.tokenLogprobArray = [];
+    this.curRoundDecodingTotalTokens = 0;
+    this.curRoundPrefillTotalTokens = 0;
+    this.curRoundPrefillTotalTime = 0;
+    this.curRoundDecodingTotalTime = 0;
+    this.curRoundGrammarInitTotalTime = 0;
+    this.curRoundGrammarPerTokenTotalTime = 0;
+    this.curRoundLatencyBreakdown = {
+      logitProcessorTime: [],
+      logitBiasTime: [],
+      penaltyTime: [],
+      sampleTime: [],
+      totalTime: [],
+      grammarBitmaskTime: [],
+    };
+    this.stopTriggered = false;
+  }
+
+  /**
    * Generate the first token given input prompt
    */
   async prefillStep(
@@ -655,95 +1440,14 @@ export class LLMChatPipeline {
     }
 
     const tstart = performance.now();
-
-    // cleanup the per convo states
-    this.outputIds = [];
-    this.appearedTokensFreq.clear();
-    this.outputMessage = "";
-    this.tokenLogprobArray = [];
-    this.curRoundDecodingTotalTokens = 0;
-    this.curRoundPrefillTotalTokens = 0;
-    this.curRoundPrefillTotalTime = 0;
-    this.curRoundDecodingTotalTime = 0;
-    this.curRoundGrammarInitTotalTime = 0;
-    this.curRoundGrammarPerTokenTotalTime = 0;
-
-    this.curRoundLatencyBreakdown = {
-      logitProcessorTime: [],
-      logitBiasTime: [],
-      penaltyTime: [],
-      sampleTime: [],
-      totalTime: [],
-      grammarBitmaskTime: [],
-    };
-
-    this.stopTriggered = false;
+    this.resetPerRoundState();
     const conversation = this.conversation;
 
     // -1. Instantiate grammar matcher according to generation config. This step is overlapped
     // with prefilling the prompt to hide overhead by using this promise.
-    let grammarMatcherInitPromise: Promise<void> | undefined = undefined;
-    if (
-      genConfig?.response_format?.type === "json_object" ||
-      genConfig?.response_format?.type === "grammar"
-    ) {
-      const curSchemaOrGrammarStr =
-        genConfig.response_format.schema || genConfig.response_format.grammar;
-      if (
-        curSchemaOrGrammarStr === this.schemaOrGrammarStr &&
-        this.grammarMatcher
-      ) {
-        // If we did not change the schema and have instantiated a GrammarMatcher, we reuse it.
-        const tGrammarInitStart = performance.now();
-        log.info("Reuse grammar matcher.");
-        this.grammarMatcher.reset();
-        this.curRoundGrammarInitTotalTime =
-          (performance.now() - tGrammarInitStart) / 1e3;
-      } else {
-        // Else dispose current grammarMatcher, reinitialize, and update this.schema.
-        /* eslint-disable no-async-promise-executor */
-        grammarMatcherInitPromise = new Promise(async (resolve) => {
-          const tGrammarInitStart = performance.now();
-          log.info("Initialize new grammar matcher.");
-          if (this.grammarMatcher) {
-            this.grammarMatcher.dispose();
-          }
-          if (this.xgTokenizerInfo === undefined) {
-            log.info("Initialize token table.");
-            // Post process entire table
-            const rawTokenTable = getTokenTableFromTokenizer(this.tokenizer);
-            this.xgTokenizerInfo = await xgr.TokenizerInfo.createTokenizerInfo(
-              rawTokenTable,
-              this.token_postproc_method,
-              this.prepend_space_in_encode,
-              this.fullVocabSize,
-              this.stopTokens,
-            );
-            this.grammarCompiler =
-              await xgr.GrammarCompiler.createGrammarCompiler(
-                this.xgTokenizerInfo,
-              );
-          }
-          const grammar: xgr.CompiledGrammar =
-            curSchemaOrGrammarStr === undefined
-              ? await this.grammarCompiler!.compileBuiltinJSONGrammar()
-              : genConfig?.response_format?.type === "json_object"
-                ? await this.grammarCompiler!.compileJSONSchema(
-                    curSchemaOrGrammarStr,
-                  )
-                : await this.grammarCompiler!.compileGrammar(
-                    curSchemaOrGrammarStr,
-                  );
-          this.grammarMatcher =
-            await xgr.GrammarMatcher.createGrammarMatcher(grammar);
-          grammar.dispose();
-          this.schemaOrGrammarStr = curSchemaOrGrammarStr;
-          this.curRoundGrammarInitTotalTime =
-            (performance.now() - tGrammarInitStart) / 1e3;
-          resolve();
-        });
-      }
-    }
+    const grammarMatcherInitPromise = await this.initializeGrammarMatcher(
+      genConfig,
+    );
 
     // 0. Get inputData from conversation
     if (conversation.isTextCompletion) {
@@ -822,6 +1526,23 @@ export class LLMChatPipeline {
     this.curRoundPrefillTotalTokens += promptLen;
     this.curRoundPrefillTotalTime += (tend - tstart) / 1e3;
 
+    // ✅ CRITICAL: Sync filledKVCacheLength to the prefix tree node
+    // This allows future branches to inherit the correct filledLength for prefix reuse
+    const activeNode = this.prefixTree.nodes.get(this.prefixTree.activeNodeId);
+    if (activeNode) {
+      const prevFilledLength = activeNode.filledLength;
+      activeNode.filledLength = this.filledKVCacheLength;
+      log.info(`[PrefixTree] prefillStep completed: Node "${this.prefixTree.activeNodeId}" ` +
+               `filledLength: ${prevFilledLength} → ${this.filledKVCacheLength} ` +
+               `(added ${this.filledKVCacheLength - prevFilledLength} tokens)`);
+      
+      // ✅ Update node's memory after prefill completes
+      // This ensures memory is tracked even before generation starts
+      this.updateCurrentNodeMemoryAfterGeneration();
+    } else {
+      log.warn(`[PrefixTree] prefillStep completed but active node not found!`);
+    }
+
     this.processNextToken(nextToken, genConfig);
   }
 
@@ -857,6 +1578,16 @@ export class LLMChatPipeline {
     this.decodingTotalTokens += 1;
     this.curRoundDecodingTotalTokens += 1;
     this.curRoundDecodingTotalTime += (tend - tstart) / 1e3;
+
+    // ✅ CRITICAL: Sync filledKVCacheLength to the prefix tree node
+    // This ensures the node's filledLength stays up-to-date with actual KV cache state
+    const activeNode = this.prefixTree.nodes.get(this.prefixTree.activeNodeId);
+    if (activeNode) {
+      const prevFilledLength = activeNode.filledLength;
+      activeNode.filledLength = this.filledKVCacheLength;
+      log.debug(`[PrefixTree] decodeStep: Node "${this.prefixTree.activeNodeId}" ` +
+               `filledLength: ${prevFilledLength} → ${this.filledKVCacheLength}`);
+    }
 
     this.processNextToken(nextToken, genConfig);
   }
@@ -974,7 +1705,94 @@ export class LLMChatPipeline {
       if (!this.conversation.isTextCompletion) {
         this.conversation.finishReply(this.outputMessage);
       }
+      
+      // ✅ Auto-update current node's memory in prefix tree after generation completes
+      this.updateCurrentNodeMemoryAfterGeneration();
+      
+      // ✅ Auto-trigger LRU pruning if memory exceeds limit
+      const totalMemory = this.calculateTotalMemoryUsage();
+      log.info(`[DEBUG processNextToken] Checking memory: total=${totalMemory}B, limit=${PREFIX_TREE_MEMORY_LIMIT}B`);
+      log.info(`[DEBUG processNextToken] Tree stats: nodes=${this.prefixTree?.nodes.size || 0}, activeId=${this.prefixTree?.activeNodeId}`);
+      
+      if (totalMemory > PREFIX_TREE_MEMORY_LIMIT) {
+        log.info(`[DEBUG processNextToken] Triggering pruning because ${totalMemory} > ${PREFIX_TREE_MEMORY_LIMIT}`);
+        this.performPruning(PREFIX_TREE_MEMORY_LIMIT, PruningStrategy.LRU);
+      }
     }
+  }
+
+  /**
+   * Auto-update current node's memory usage in prefix tree after generation
+   * Uses actual KVCache filled length instead of estimation
+   */
+  private updateCurrentNodeMemoryAfterGeneration(): void {
+    if (!this.prefixTree || this.prefixTree.nodes.size === 0) {
+      return; // No prefix tree or empty tree
+    }
+
+    const activeNodeId = this.prefixTree.activeNodeId;
+    const activeNode = this.prefixTree.nodes.get(activeNodeId);
+    
+    if (!activeNode) {
+      log.warn(`[PrefixTree Memory] Active node "${activeNodeId}" not found when updating memory`);
+      return;
+    }
+
+    // ✅ Calculate actual memory based on model parameters
+    const actualMemoryBytes = this.calculateKVCacheMemory(this.filledKVCacheLength);
+    activeNode.memoryUsageBytes = actualMemoryBytes;
+    activeNode.lastAccessedAt = Date.now();
+    
+    log.info(`[PrefixTree Memory] Auto-updated node "${activeNodeId}" memory: ${actualMemoryBytes} bytes (filledLength=${this.filledKVCacheLength})`);
+  }
+
+  /**
+   * Calculate actual KVCache memory based on model parameters
+   * 
+   * Formula:
+   * Memory = 2 × num_layers × seq_length × (hidden_dim_per_head × num_kv_heads) × bytes_per_param
+   * 
+   * Where:
+   * - 2: KVCache stores both Key and Value
+   * - num_layers: Number of transformer layers
+   * - seq_length: Current sequence length (filledKVCacheLength)
+   * - hidden_dim_per_head: hidden_size / num_heads (or head_dim directly)
+   * - num_kv_heads: Number of key-value heads (for GQA support)
+   * - bytes_per_param: 2 bytes for fp16 (default), 1 for int8, 4 for fp32
+   * 
+   * @param seqLength Current sequence length in tokens
+   * @returns Memory used in bytes
+   */
+  private calculateKVCacheMemory(seqLength: number): number {
+    // If model parameters are not available, use fallback estimation
+    if (this.modelNumLayers === 0 || this.modelHiddenDim === 0 || this.modelNumHeads === 0) {
+      // Fallback: 20 bytes per token (conservative estimate)
+      log.debug(`[KVCache Memory] Using fallback estimation (model params incomplete)`);
+      return seqLength * 20;
+    }
+
+    // Typical settings:
+    // - batch_size = 1 (single sequence in WebLLM)
+    // - bytes_per_param = 2 (fp16 is default for models)
+    const batchSize = 1;
+    const bytesPerParam = 2; // fp16 default
+    
+    // Calculate hidden dimension per head
+    const hiddenDimPerHead = this.modelHiddenDim / this.modelNumHeads;
+    
+    // Number of KV heads (handles GQA: Grouped Query Attention)
+    const numKVHeads = this.modelNumKVHeads > 0 ? this.modelNumKVHeads : this.modelNumHeads;
+    
+    // KVCache memory calculation:
+    // K cache: num_layers × batch_size × seq_length × (hidden_dim_per_head × num_kv_heads) × bytes_per_param
+    // V cache: num_layers × batch_size × seq_length × (hidden_dim_per_head × num_kv_heads) × bytes_per_param
+    // Total = 2 × K_cache_size (since V has same size as K)
+    const cachePerLayer = batchSize * seqLength * hiddenDimPerHead * numKVHeads * bytesPerParam;
+    const totalMemory = 2 * this.modelNumLayers * cachePerLayer; // 2 for K and V
+    
+    log.debug(`[KVCache Memory] layers=${this.modelNumLayers}, seq_len=${seqLength}, hidden_dim=${this.modelHiddenDim}, num_heads=${this.modelNumHeads}, kv_heads=${numKVHeads}, memory=${totalMemory} bytes`);
+    
+    return totalMemory;
   }
 
   /**
@@ -1087,17 +1905,19 @@ export class LLMChatPipeline {
 
     // 3. Forward the concatenated embeddings
     const inputLenShape = this.tvm.makeShapeTuple([inputDataLen]);
-    const seqIdsTuple = this.tvm.makeShapeTuple([0]);
-    this.fKVCacheBeginForward!(this.kvCache, seqIdsTuple, inputLenShape);
+    const activeNode = this.prefixTree.nodes.get(this.prefixTree.activeNodeId)!;
+    const seqIdsTuple = this.tvm.makeShapeTuple([activeNode.seqId]);  // ✅ 使用活跃节点的 seqId
+    const activeKVCache = this.getActiveKVCache();
+    this.fKVCacheBeginForward!(activeKVCache, seqIdsTuple, inputLenShape);
     let retValue;
     if (inputDataLen > 1) {
-      retValue = this.prefill(allEmbeddings, this.kvCache, this.params);
+      retValue = this.prefill(allEmbeddings, activeKVCache, this.params);
     } else {
-      retValue = this.decoding(allEmbeddings, this.kvCache, this.params);
+      retValue = this.decoding(allEmbeddings, activeKVCache, this.params);
     }
 
     // Epilogue
-    this.fKVCacheEndForward!(this.kvCache);
+    this.fKVCacheEndForward!(activeKVCache);
     this.filledKVCacheLength += inputDataLen;
     const logits = this.tvm.detachFromCurrentScope(retValue.get(0));
     this.tvm.endScope();
@@ -1536,6 +2356,7 @@ export class LLMChatPipeline {
 
     // 1. Get prompts
     if (this.conversation.isTextCompletion) {
+      console.log("the text is completed");
       // 1.1. Non-conversation style
       if (this.filledKVCacheLength !== 0) {
         throw new TextCompletionExpectsKVEmptyError();
@@ -1544,6 +2365,7 @@ export class LLMChatPipeline {
     } else {
       // 1.2. Conversation style
       if (this.filledKVCacheLength === 0) {
+        log.info(`[PrefixTree] getInputData: filledLength=0, using getPromptArray (full history)`);
         if (
           this.conversation.config.system_prefix_token_ids !== undefined &&
           this.conversation.config.system_prefix_token_ids !== null
@@ -1552,6 +2374,7 @@ export class LLMChatPipeline {
         }
         prompts = this.conversation.getPromptArray();
       } else {
+        log.info(`[PrefixTree] getInputData: filledLength=${this.filledKVCacheLength}, using getPromptArrayLastRound (only new messages)`);
         prompts = this.conversation.getPromptArrayLastRound();
       }
     }

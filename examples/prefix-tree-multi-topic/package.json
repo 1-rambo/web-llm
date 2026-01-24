@@ -1,5 +1,5 @@
 {
-  "name": "shared-context",
+  "name": "prefix-tree-multi-topic",
   "version": "0.1.0",
   "private": true,
   "alias": {

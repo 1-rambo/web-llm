@@ -1396,8 +1396,85 @@ export class MLCEngine implements MLCEngineInterface {
   }
 
   //-----------------------------------------------
-  // 7. Prefill and decode given an LLMChatPipeline
+  // 6.5. Prefix tree operations for multi-topic conversations
   //-----------------------------------------------
+
+  /**
+   * Create a new conversation branch from the currently active node.
+   * This allows managing multiple conversation topics with shared KV cache prefixes.
+   *
+   * @param nodeId Unique identifier for the new conversation branch
+   * @param modelId Optional model ID. If not provided, uses the first loaded model.
+   * @returns true if branch was created successfully, false otherwise
+   */
+  createConversationBranch(nodeId: string, modelId?: string): boolean {
+    const [, selectedPipeline] = this.getLLMStates(
+      "createConversationBranch",
+      modelId,
+    );
+    return selectedPipeline.createConversationBranch(nodeId);
+  }
+
+  /**
+   * Switch to an existing conversation branch by node ID.
+   * This performs an O(1) context switch without copying KV cache.
+   *
+   * @param nodeId The ID of the target conversation branch
+   * @param modelId Optional model ID. If not provided, uses the first loaded model.
+   * @returns true if switch was successful, false otherwise
+   */
+  switchToNode(nodeId: string, modelId?: string): boolean {
+    const [, selectedPipeline] = this.getLLMStates(
+      "switchToNode",
+      modelId,
+    );
+    return selectedPipeline.switchToNode(nodeId);
+  }
+
+  /**
+   * Delete a conversation branch and all its children.
+   * The active node cannot be deleted.
+   *
+   * @param nodeId The ID of the node to delete
+   * @param modelId Optional model ID. If not provided, uses the first loaded model.
+   * @returns true if deletion was successful, false otherwise
+   */
+  deleteNode(nodeId: string, modelId?: string): boolean {
+    const [, selectedPipeline] = this.getLLMStates(
+      "deleteNode",
+      modelId,
+    );
+    return selectedPipeline.deleteNode(nodeId);
+  }
+
+  /**
+   * Get information about a specific prefix tree node.
+   *
+   * @param nodeId The ID of the node to query
+   * @param modelId Optional model ID. If not provided, uses the first loaded model.
+   * @returns Node information including filled length, message count, and parent/children IDs
+   */
+  getPrefixTreeNodeInfo(nodeId: string, modelId?: string): any {
+    const [, selectedPipeline] = this.getLLMStates(
+      "getPrefixTreeNodeInfo",
+      modelId,
+    );
+    return selectedPipeline.getPrefixTreeNodeInfo(nodeId);
+  }
+
+  /**
+   * Get comprehensive statistics about the entire prefix tree structure.
+   *
+   * @param modelId Optional model ID. If not provided, uses the first loaded model.
+   * @returns Tree statistics including total nodes, depth, node IDs, and active node
+   */
+  getPrefixTreeStats(modelId?: string): any {
+    const [, selectedPipeline] = this.getLLMStates(
+      "getPrefixTreeStats",
+      modelId,
+    );
+    return selectedPipeline.getPrefixTreeStats();
+  }
 
   /**
    * Run a prefill step with a given input.
@@ -1452,12 +1529,33 @@ export class MLCEngine implements MLCEngineInterface {
           chatConfig,
         );
         
-        if (!compareConversationObject(oldConv, newConv)) {
+        // ✅ 保存前缀树节点的 filledKVCacheLength（如果存在）
+        const savedFilledLength = pipeline.getFilledKVCacheLength();
+        
+        log.info(`[Engine Prefill] Checking conversation update:`);
+        log.info(`  oldConv.messages=${oldConv.messages.length}, newConv.messages=${newConv.messages.length}`);
+        log.info(`  savedFilledLength=${savedFilledLength}`);
+        
+        // ✅ CRITICAL：对于前缀树节点（filledLength > 0），允许消息数增加
+        // 这表示在已处理的前缀基础上添加了新消息
+        if (savedFilledLength > 0 && newConv.messages.length >= oldConv.messages.length) {
+          // 这是前缀树的分支场景：新消息被添加到旧消息之后
+          // 更新 conversation 以包含新消息，但保留 filledLength
+          log.info(`[Engine Prefill] ✅ Prefix tree branch: keeping filledLength=${savedFilledLength}, messages ${oldConv.messages.length}→${newConv.messages.length}`);
+          pipeline.setConversation(newConv);
+          // ✅ 保持 filledLength 不变，以便复用 KVCache 前缀
+          pipeline.setFilledKVCacheLength(savedFilledLength);
+        } else if (!compareConversationObject(oldConv, newConv)) {
+          // 常规的 multi-round 聊天或完全不同的会话
+          log.info(`[Engine Prefill] Conversation mismatch: resetChat`);
           pipeline.resetChat();
           pipeline.setConversation(newConv);
+          pipeline.setFilledKVCacheLength(0);
         } else if (newConv.messages.length === 0) {
+          log.info(`[Engine Prefill] Empty conversation: resetChat`);
           pipeline.resetChat();
           pipeline.setConversation(newConv);
+          pipeline.setFilledKVCacheLength(0);
         } else {
           log.info("Multiround chatting, reuse KVCache.");
         }
@@ -1494,5 +1592,122 @@ export class MLCEngine implements MLCEngineInterface {
    */
   async decode(pipeline: LLMChatPipeline, genConfig?: GenerationConfig) {
     return pipeline.decodeStep(genConfig);
+  }
+
+  //-----------------------------------------------
+  // 6.6. 前缀树内存管理与剪枝接口
+  //-----------------------------------------------
+
+  /**
+   * 更新前缀树节点的内存占用
+   *
+   * @param nodeId 节点ID
+   * @param memoryBytes 内存占用字节数
+   * @param modelId 可选的模型ID
+   */
+  updatePrefixTreeNodeMemory(
+    nodeId: string,
+    memoryBytes: number,
+    modelId?: string,
+  ): void {
+    const [, selectedPipeline] = this.getLLMStates(
+      "updatePrefixTreeNodeMemory",
+      modelId,
+    );
+    selectedPipeline.updateNodeMemoryUsage(nodeId, memoryBytes);
+  }
+
+  /**
+   * 获取前缀树的总内存占用
+   *
+   * @param modelId 可选的模型ID
+   * @returns 总内存占用字节数
+   */
+  getPrefixTreeTotalMemory(modelId?: string): number {
+    const [, selectedPipeline] = this.getLLMStates(
+      "getPrefixTreeTotalMemory",
+      modelId,
+    );
+    return selectedPipeline.calculateTotalMemoryUsage();
+  }
+
+  /**
+   * 获取前缀树详细的内存统计信息
+   *
+   * @param modelId 可选的模型ID
+   * @returns 内存统计信息，包括总内存、各节点内存分布等
+   */
+  getPrefixTreeMemoryStats(modelId?: string): any {
+    const [, selectedPipeline] = this.getLLMStates(
+      "getPrefixTreeMemoryStats",
+      modelId,
+    );
+    const stats = selectedPipeline.getPrefixTreeMemoryStats();
+    return {
+      totalMemoryBytes: stats.totalMemoryBytes,
+      nodeMemoryMap: Object.fromEntries(stats.nodeMemoryMap),
+      avgNodeMemoryBytes: stats.avgNodeMemoryBytes,
+      maxNodeMemoryBytes: stats.maxNodeMemoryBytes,
+      minNodeMemoryBytes: stats.minNodeMemoryBytes,
+    };
+  }
+
+  /**
+   * 获取当前KVCache的填充长度（已使用的token数）
+   *
+   * @param modelId 可选的模型ID
+   * @returns 填充长度（token数）
+   */
+  getFilledKVCacheLength(modelId?: string): number {
+    const [, selectedPipeline] = this.getLLMStates(
+      "getFilledKVCacheLength",
+      modelId,
+    );
+    return selectedPipeline.getFilledKVCacheLength();
+  }
+
+  /**
+   * 获取可以被剪枝的候选节点列表
+   *
+   * @param modelId 可选的模型ID
+   * @returns 剪枝候选节点数组，包含每个节点的详细信息
+   */
+  getPrefixTreePrunableCandidates(modelId?: string): any[] {
+    const [, selectedPipeline] = this.getLLMStates(
+      "getPrefixTreePrunableCandidates",
+      modelId,
+    );
+    return selectedPipeline.getPrunableCandidates();
+  }
+
+  /**
+   * 执行前缀树剪枝：删除节点以释放内存
+   *
+   * @param memoryLimit 内存上界（字节）
+   * @param strategy 剪枝策略: "lru" | "custom"
+   * @param customSelector 自定义选择器（当策略为 "custom" 时使用）
+   *   接收候选节点列表，返回要删除的节点ID列表
+   * @param modelId 可选的模型ID
+   * @returns 本次剪枝释放的内存总量（字节）
+   */
+  performPrefixTreePruning(
+    memoryLimit: number,
+    strategy: string = "lru",
+    customSelector?: (candidates: any[]) => string[],
+    modelId?: string,
+  ): number {
+    const [, selectedPipeline] = this.getLLMStates(
+      "performPrefixTreePruning",
+      modelId,
+    );
+
+    // 将字符串策略映射到 PruningStrategy 枚举
+    let strategyEnum = strategy.toLowerCase();
+    if (strategyEnum !== "lru" && strategyEnum !== "custom") {
+      log.warn(`Unknown pruning strategy "${strategy}", falling back to "lru"`);
+      strategyEnum = "lru";
+    }
+
+    return selectedPipeline.performPruning(strategyEnum as any, strategyEnum as any, customSelector);
   }
 }
